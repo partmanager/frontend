@@ -10,8 +10,10 @@
       <q-card-section>
         Project version: {{ project.version }}<br />
         Description: {{ assembly.description }} <br />
-        <strong>Quantity: {{ assembly.quantity }}</strong></q-card-section
-      >
+        <strong>Quantity: {{ assembly.quantity }}</strong
+        ><br />
+        Total Price: {{ assembly.price }} <br />
+      </q-card-section>
 
       <q-card-actions>
         <q-btn
@@ -50,7 +52,12 @@
     <q-table
       title="Parts"
       :columns="[
-        { name: 'quantity', label: 'Quantity', field: 'quantity' },
+        {
+          name: 'quantity',
+          label: 'Quantity',
+          field: 'quantity',
+          sortable: true,
+        },
         {
           name: 'reserved_qty',
           label: 'Reserved Quantity',
@@ -60,25 +67,54 @@
           name: 'price',
           label: 'Parts price',
           field: 'price',
+          sortable: true,
         },
         { name: 'action', label: 'Action', align: 'left', field: 'id' },
         {
           name: 'manufacturer',
           label: 'Manufacturer',
-          field: 'manufacturer',
-          format: (val, row) => val || row.part_not_found_fallback.Manufacturer,
+          field: 'part',
+          format: (val, row) => {
+            if (val) {
+              return val.manufacturer;
+            } else if (row.part_not_found_fallback) {
+              return row.part_not_found_fallback.manufacturer;
+            }
+          },
         },
         {
           name: 'mpn',
           label: 'MPN',
-          field: 'mpn',
-          format: (val, row) => val || row.part_not_found_fallback.MPN,
+          field: 'part',
+          format: (val, row) => {
+            if (val) {
+              return val.manufacturer_part_number;
+            } else if (row.part_not_found_fallback) {
+              return row.part_not_found_fallback.MPN;
+            }
+          },
         },
         {
           name: 'mon',
           label: 'MON',
-          field: 'mon',
-          format: (val, row) => val || row.part_not_found_fallback.MON,
+          field: 'manufacturer_order_number',
+          format: (val, row) => {
+            if (val) {
+              return val.manufacturer_order_number;
+            } else if (row.part_not_found_fallback) {
+              return row.part_not_found_fallback.MON;
+            }
+          },
+        },
+        {
+          name: 'desc',
+          label: 'Description',
+          field: 'part',
+          format: (val, row) => {
+            if (val) {
+              return val.description;
+            }
+          },
         },
       ]"
       :rows="items"
@@ -119,17 +155,7 @@
                 <q-icon name="warning" color="white" class="q-ml-xs" />
               </q-badge>
               <q-badge
-                v-if="
-                  !props.row.manufacturer_order_number ||
-                  !props.row.manufacturer_order_number
-                    .inventoryposition_set[0] ||
-                  props.row.quantity >
-                    props.row.manufacturer_order_number.inventoryposition_set.reduce(
-                      (accumulator, currentValue) =>
-                        accumulator + currentValue.stock,
-                      0
-                    )
-                "
+                v-if="props.row.quantity > props.row.available_qty"
                 color="yellow-6"
                 text-color="black"
                 title="Not enough parts on stock"
@@ -352,6 +378,7 @@ export default {
       name: null,
       description: null,
       quantity: null,
+      price: 0,
     });
 
     const items = ref([]);
@@ -364,17 +391,20 @@ export default {
         assembly.value.name = response.data.name;
         assembly.value.description = response.data.description;
         assembly.value.quantity = response.data.quantity;
+        assembly.value.price = 0;
 
         items.value = response.data.assembly_item_set;
 
         for (let index = 0; index < items.value.length; ++index) {
           items.value[index].reserved_qty = 0;
           items.value[index].price = 0;
+          items.value[index].available_qty = 0;
 
-          if (items.value[index].manufacturer_order_number) {
+          if (items.value[index].inventory_positions_set) {
             let inventory_positions =
-              items.value[index].manufacturer_order_number
-                .inventoryposition_set;
+              items.value[index].inventory_positions_set;
+            // items.value[index].manufacturer_order_number
+            //   .inventoryposition_set;
             const inventory_reservation_set =
               items.value[index].inventoryreservation_set;
 
@@ -382,6 +412,7 @@ export default {
               inventory_positions[ip].assembly_item_id = items.value[index].id;
               inventory_positions[ip].popup = ref();
               inventory_positions[ip].reservation = { quantity: 0 };
+              items.value[index].available_qty += inventory_positions[ip].stock;
 
               for (let ir = 0; ir < inventory_reservation_set.length; ++ir) {
                 if (
@@ -402,7 +433,7 @@ export default {
                 }
               }
             }
-
+            assembly.value.price += items.value[index].price;
             items.value[index].inventory_positions = inventory_positions;
           } else {
             items.value[index].inventory_positions = [];

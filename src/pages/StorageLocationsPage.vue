@@ -124,8 +124,14 @@ const columns = [
     name: "name",
     label: "Name",
     align: "left",
-    format: (value) => value.name,
     field: "part",
+    format: (value, row) => {
+      if (value) {
+        return value.name;
+      } else {
+        return row.name;
+      }
+    },
   },
   { name: "img", label: "Img", align: "left", field: "image" },
   { name: "action", label: "Action", align: "left" },
@@ -133,7 +139,13 @@ const columns = [
     name: "description",
     label: "Description",
     align: "left",
-    format: (value) => value.description,
+    format: (value, row) => {
+      if (value) {
+        return value.description;
+      } else {
+        return row.description;
+      }
+    },
     field: "part",
   },
   {
@@ -145,8 +157,30 @@ const columns = [
   { name: "condition", label: "Condition", field: "condition" },
   { name: "invoice", label: "Invoice", field: "invoice_number" },
   { name: "stock", label: "Stock", field: "stock" },
-  { name: "stock_value", label: "Stock Value", field: "stock_value" },
-  { name: "price", label: "Price", field: "price" },
+  {
+    name: "stock_value",
+    label: "Stock Value",
+    field: "invoice",
+    format: (value, row) => {
+      if (value) {
+        return (
+          (row.stock * value.unit_price).toPrecision(4) +
+          " " +
+          value.price_currency
+        );
+      }
+    },
+  },
+  {
+    name: "price",
+    label: "Price",
+    field: "invoice",
+    format: (value, row) => {
+      if (value) {
+        return value.unit_price + " " + value.price_currency;
+      }
+    },
+  },
 ];
 
 export default {
@@ -193,10 +227,10 @@ export default {
     function load_storage_location_data(id) {
       loading.value = true;
       api
-        .post(`inventory/api/storage_location_detail/${id}`)
+        .get(`/api/storage_location_items/${id}`)
         .then((response) => {
-          name.value = response.data.name;
-          parts.value = response.data.rows;
+          name.value = response.data.location;
+          parts.value = response.data.inventoryposition_set;
         })
         .finally(() => {
           loading.value = false;

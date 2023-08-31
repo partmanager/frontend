@@ -486,10 +486,10 @@ export default defineComponent({
       add_item_note.value = initial_data.note;
       add_item_quantity.value = initial_data.stock;
       add_item_quantity_unit.value = add_item_quantity_unit_options.filter(
-        (value) => value.id == initial_data.stock_unit_id
+        (value) => value.id == initial_data.stock_unit
       )[0];
       add_item_storage_location.value = props.storage_location_set.filter(
-        (value) => value.id == initial_data.storage_location_id
+        (value) => value.id == initial_data.storage_location.id
       )[0];
       if (initial_data.manufacturer_id) {
         add_item_manufacturer.value = props.manufacturer_set.filter(
@@ -499,15 +499,15 @@ export default defineComponent({
         add_item_manufacturer.value = null;
       }
       add_item_condition.value = add_item_condition_status_options.filter(
-        (value) => value.id == initial_data.condition_id
+        (value) => value.id == initial_data.condition
       )[0];
       add_item_inventory_status.value =
         add_item_inventory_status_options.filter(
-          (value) => value.id == initial_data.inventory_status_id
+          (value) => value.id == initial_data.status
         )[0];
-      if (initial_data.category_id) {
+      if (initial_data.category) {
         add_item_category.value = props.inventory_flat_category_set.filter(
-          (value) => value.id == initial_data.category_id
+          (value) => value.id == initial_data.category
         )[0];
       }
       if (initial_data.distributor_id) {

@@ -53,10 +53,8 @@
 
       <q-tab-panel name="parts">
         <DistributorOrderNumberTable
-          v-model:pagination="pagination"
-          :loading="distributor_order_numbers_loading"
-          :rows="distributor_order_numbers"
-          @request="request_distributor_order_numbers_list"
+          :distributor_id="active_id"
+          :distributor_name="distributor_name"
         >
         </DistributorOrderNumberTable>
       </q-tab-panel>
@@ -98,13 +96,6 @@ const distributor_name = ref();
 const distributor_website = ref();
 const distirbutor_parts_count = ref();
 const distibutor_missing_mon_parts_count = ref();
-const distributor_order_numbers_loading = ref(false);
-const distributor_order_numbers = ref([]);
-const pagination = ref({
-  page: 1,
-  rowsPerPage: 10,
-  rowsNumber: 10,
-});
 
 function load_distributor_detail(id) {
   api.get(`/api/distributor/${id}/`).then((response) => {
@@ -127,41 +118,15 @@ function load_distributor_manufacturers(id) {
   distributor_manufacturer_name_conversion_table_loading.value = false;
 }
 
-function request_distributor_order_numbers_list(props) {
-  const id = props.id;
-  const { page, rowsPerPage } = props.pagination;
-  const filter = props.filter;
-
-  distributor_order_numbers_loading.value = true;
-  api
-    .get(`api/distributor-order-number/`, {
-      params: {
-        distributor: id,
-        unassigned: false,
-        searchText: filter,
-        pageSize: rowsPerPage,
-        pageNumber: page,
-      },
-    })
-    .then((response) => {
-      pagination.value.page = page;
-      pagination.value.rowsPerPage = rowsPerPage;
-      pagination.value.rowsNumber = response.data.count;
-
-      distributor_order_numbers.value = response.data.results;
-    })
-    .finally(() => {
-      distributor_order_numbers_loading.value = false;
-    });
-}
-
 export default {
   setup() {
     const route = useRoute();
-    const active_id = route.params.id;
+    const active_id = Number(route.params.id);
+    const distributor_order_numbers_table = ref();
     const filter = ref("");
     const distributor_edit_dialog_model = ref();
     const delete_confirmation_dialog = ref();
+    const loading = ref();
 
     function onDistributorEdit() {
       distributor_edit_dialog_model.value = false;
@@ -175,15 +140,12 @@ export default {
     onMounted(() => {
       load_distributor_detail(route.params.id);
       load_distributor_manufacturers(route.params.id);
-      request_distributor_order_numbers_list({
-        id: route.params.id,
-        pagination: pagination.value,
-        filter: undefined,
-      });
     });
 
     return {
       tab: ref("details"),
+
+      loading,
 
       distributor_name,
       distributor_website,
@@ -195,9 +157,7 @@ export default {
       distributor_manufacturer_name_conversion_table_loading,
       distributor_manufacturer_name_conversion_table_rows,
 
-      distributor_order_numbers_loading,
-      distributor_order_numbers,
-      pagination,
+      distributor_order_numbers_table,
       filter,
 
       delete_confirmation_dialog,
@@ -206,8 +166,6 @@ export default {
 
       onDistributorEdit,
       onDistributorDelete,
-
-      request_distributor_order_numbers_list,
     };
   },
   components: {
@@ -223,11 +181,6 @@ export default {
         // react to route changes...
         load_distributor_detail(toParams.id);
         load_distributor_manufacturers(toParams.id);
-        request_distributor_order_numbers_list({
-          id: toParams.id,
-          pagination: pagination.value,
-          filter: undefined,
-        });
       }
     );
   },

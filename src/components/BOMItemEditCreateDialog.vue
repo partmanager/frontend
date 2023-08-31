@@ -151,6 +151,7 @@ export default defineComponent({
         part: selected_part.value[0].part.id,
         quantity: quantity.value,
         group: bom_group_select.value.value,
+        designators: designators.value,
       };
     }
 

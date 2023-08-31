@@ -175,10 +175,10 @@
                 <div class="text-h5">{{ props.row.part.description }}</div>
                 <br />
                 Location:<br />
-                <strong>{{ props.row.storage_location }}</strong> ->
+                <strong>{{ props.row.storage_location.location }}</strong> ->
                 {{ props.row.stock }} {{ props.row.stock_unit }}<br />
                 Condition: {{ props.row.condition }}<br />
-                Status: {{ props.row.status_id }}<br />
+                Status: {{ props.row.status }}<br />
                 <br />
                 <form @submit.prevent.stop="onSubmit" class="row">
                   <q-input
@@ -448,6 +448,9 @@ const columns = [
     name: "storage-location",
     label: "Storage Location",
     field: "storage_location",
+    format: (val) => {
+      return val.location;
+    },
   },
   { name: "condition", label: "Condition", field: "condition" },
   {

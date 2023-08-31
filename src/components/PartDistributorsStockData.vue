@@ -160,7 +160,7 @@ export default defineComponent({
       if (id.length) {
         loading.value = true;
         api
-          .get(`/distributors/api/get/stock_and_price/`, {
+          .get(`/api/distributor/stock_and_price/`, {
             params: {
               pk: id,
               refresh: refresh,

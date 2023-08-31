@@ -165,19 +165,36 @@ const columns = [
     name: "distributor_order_number",
     label: "Distributor Order Number",
     align: "left",
-    field: "don_don",
+    field: "distributor_number",
   },
   {
     name: "manufacturer_order_number",
     label: "Manufacturer Order Number",
     align: "left",
-    field: "mon",
+    field: "distributor_order_number",
+    format: (val) => {
+      if (val)
+        if (val.mapped_mon) {
+          return val.mapped_mon.mon;
+        } else {
+          return val.mon;
+        }
+    },
   },
   {
     name: "manufacturer",
     align: "center",
     label: "Manufacturer",
-    field: "manufacturer",
+    field: "distributor_order_number",
+    format: (val) => {
+      if (val) {
+        if (val.mapped_mon) {
+          return val.mapped_mon.manufacturer;
+        } else {
+          return val.manufacturer;
+        }
+      }
+    },
   },
   {
     name: "quantity_ordered",
@@ -222,12 +239,35 @@ const columns = [
       return null;
     },
   },
-  { name: "stock_quantity", label: "Stock Quantity", field: "stock_quantity" },
-  { name: "stock_value", label: "Stock Value", field: "stock_value" },
+  {
+    name: "stock_quantity",
+    label: "Stock Quantity",
+    field: "inventory_positions",
+    format: (val) => {
+      if (val && val.length > 0) {
+        return val[0].stock_quantity;
+      }
+    },
+  },
+  {
+    name: "stock_value",
+    label: "Stock Value",
+    field: "inventory_positions",
+    format: (val) => {
+      if (val && val.length > 0) {
+        return val[0].stock_value;
+      }
+    },
+  },
   {
     name: "stock_location",
     label: "Stock Location(s)",
-    field: "storage_location",
+    field: "inventory_positions",
+    format: (val) => {
+      if (val && val.length > 0) {
+        return val[0].storage_location;
+      }
+    },
   },
 ];
 
@@ -280,14 +320,14 @@ export default {
     onMounted(() => {
       loading.value = true;
       api
-        .get(`/invoices/api/invoice_detail/${id}`)
+        .get(`/api/invoice-with-items/${id}`)
         .then((response) => {
-          invoice.value.id = response.data.invoice.pk;
-          invoice.value.distributor = response.data.invoice.distributor;
-          invoice.value.number = response.data.invoice.invoiceNumber;
-          invoice.value.date = response.data.invoice.date;
+          invoice.value.id = response.data.pk;
+          invoice.value.distributor = response.data.distributor;
+          invoice.value.number = response.data.number;
+          invoice.value.date = response.data.invoice_date;
 
-          rows.value = response.data.items;
+          rows.value = response.data.invoiceitem_set;
         })
         .finally(() => {
           loading.value = false;

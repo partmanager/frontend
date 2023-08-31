@@ -29,48 +29,36 @@
                   <div v-if="part_details.product_url">
                     <strong>Manufacturer Part Number:</strong>
                     <a :href="part_details.product_url">{{
-                      part_details.generic_parameters.mpn
+                      part_details.manufacturer_part_number
                     }}</a
                     ><br />
                   </div>
                   <div v-if="!part_details.product_url">
                     <strong>Manufacturer Part Number:</strong>
-                    {{ part_details.generic_parameters.mpn }}<br />
+                    {{ part_details.manufacturer_part_number }}<br />
                   </div>
                   <strong>Description:</strong>
-                  {{ part_details.generic_parameters.description }}<br />
+                  {{ part_details.description }}<br />
                   <strong>Manufacturer:</strong>
-                  {{ part_details.generic_parameters.manufacturer }}<br />
+                  {{ part_details.manufacturer.name }}<br />
                   <strong>Production Status:</strong>
-                  {{ part_details.generic_parameters.production_status }}<br />
+                  {{ part_details.production_status }}<br />
                   <strong>Notes:</strong>
-                  {{ part_details.generic_parameters.notes }}<br />
+                  {{ part_details.notes }}<br />
                   <strong>Comment:</strong>
-                  {{ part_details.generic_parameters.comment }}<br />
+                  {{ part_details.comment }}<br />
                   <strong>Storage Conditions:</strong> <br />
                   - temperature:
-                  {{
-                    part_details.generic_parameters.storage_conditions
-                      .temperature_min
-                  }}
+                  {{ part_details.storage_conditions.temperature_min || "" }}
                   ~
-                  {{
-                    part_details.generic_parameters.storage_conditions
-                      .temperature_max
+                  {{ part_details.storage_conditions.temperature_max || ""
                   }}<br />
                   - humidity:
-                  {{
-                    part_details.generic_parameters.storage_conditions
-                      .humidity_min
-                  }}
+                  {{ part_details.storage_conditions.humidity_min || "" }}
                   ~
-                  {{
-                    part_details.generic_parameters.storage_conditions
-                      .humidity_max
-                  }}<br />
+                  {{ part_details.storage_conditions.humidity_max || "" }}<br />
                   - MSL:
-                  {{ part_details.generic_parameters.storage_conditions.msl
-                  }}<br />
+                  {{ part_details.storage_conditions.msl || "" }}<br />
                   <strong>Operating Conditions:</strong><br />
                 </div>
                 <div class="col col-6">
@@ -97,7 +85,7 @@
 
         <q-tab-panel name="packaging">
           <PartPackaging
-            :packaging_data="part_details.manufacturer_order_numbers"
+            :packaging_data="part_details.manufacturer_order_number_set"
           >
           </PartPackaging>
         </q-tab-panel>
@@ -201,13 +189,13 @@
                 name: 'filename',
                 label: 'Filename',
                 align: 'left',
-                field: 'series',
+                field: 'name',
               },
               {
                 name: 'description',
                 label: 'Description',
                 align: 'left',
-                field: 'series',
+                field: 'description',
               },
               {
                 name: 'version',
@@ -219,11 +207,17 @@
                 name: 'file_type',
                 label: 'File Type',
                 align: 'left',
-                field: 'series',
+                field: 'file_type',
               },
             ]"
             :rows="part_details.files"
-          >
+            ><template v-slot:body-cell-filename="props">
+              <q-td :props="props">
+                <div>
+                  <a :href="props.row.url">{{ props.value }}</a>
+                </div>
+              </q-td>
+            </template>
           </q-table>
         </q-tab-panel>
       </q-tab-panels>
@@ -255,13 +249,12 @@ export default defineComponent({
   setup(props) {
     const tab = ref("parameters");
     const part_details = ref({
-      generic_parameters: {
-        storage_conditions: {
-          temperature_min: null,
-          temperature_max: null,
-          humidity_min: null,
-          humidity_max: null,
-        },
+      manufacturer: { name: null },
+      storage_conditions: {
+        temperature_min: null,
+        temperature_max: null,
+        humidity_min: null,
+        humidity_max: null,
       },
       package: {
         files: {
@@ -278,9 +271,10 @@ export default defineComponent({
       if (props.id >= 0) {
         loading.value = true;
         api
-          .post(`/parts/api/part/detail`, { id: props.id })
+          //.post(`/parts/api/part/detail`, { id: props.id })
+          .get(`/api/part-poli/${props.id}`)
           .then((response) => {
-            part_details.value = response.data.data;
+            part_details.value = response.data;
           })
           .finally(() => {
             loading.value = false;

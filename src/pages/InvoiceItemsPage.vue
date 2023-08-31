@@ -91,9 +91,16 @@
 <script>
 import { ref, onMounted } from "vue";
 import { api } from "boot/axios";
+import { quantity_unit_id_to_name } from "src/boot/choices.js";
 
 const columns = [
-  { name: "invoice", label: "Invoice", align: "left", field: "invoice" },
+  {
+    name: "invoice",
+    label: "Invoice",
+    align: "left",
+    field: "invoice",
+    format: (val) => val.number,
+  },
   {
     name: "order_number",
     label: "Order Number",
@@ -116,13 +123,30 @@ const columns = [
     name: "manufacturer_order_number",
     label: "Manufacturer Order Number",
     align: "left",
-    field: "mon",
+    field: "distributor_order_number",
+    format: (val) => {
+      if (val)
+        if (val.mapped_mon) {
+          return val.mapped_mon.mon;
+        } else {
+          return val.mon;
+        }
+    },
   },
   {
     name: "manufacturer",
     align: "center",
     label: "Manufacturer",
-    field: "manufacturer",
+    field: "distributor_order_number",
+    format: (val) => {
+      if (val) {
+        if (val.mapped_mon) {
+          return val.mapped_mon.manufacturer;
+        } else {
+          return val.manufacturer;
+        }
+      }
+    },
   },
   {
     name: "quantity_ordered",
@@ -139,7 +163,12 @@ const columns = [
     label: "Quantity Delivered",
     field: "delivered_quantity",
   },
-  { name: "quantity_unit", label: "Quantity Unit", field: "quantity_unit" },
+  {
+    name: "quantity_unit",
+    label: "Quantity Unit",
+    field: "quantity_unit",
+    format: quantity_unit_id_to_name,
+  },
   {
     name: "unit_price",
     label: "Unit Price",
@@ -162,12 +191,35 @@ const columns = [
       return null;
     },
   },
-  { name: "stock_quantity", label: "Stock Quantity", field: "stock_quantity" },
-  { name: "stock_value", label: "Stock Value", field: "stock_value" },
+  {
+    name: "stock_quantity",
+    label: "Stock Quantity",
+    field: "inventory_positions",
+    format: (val) => {
+      if (val && val.length > 0) {
+        return val[0].stock_quantity;
+      }
+    },
+  },
+  {
+    name: "stock_value",
+    label: "Stock Value",
+    field: "inventory_positions",
+    format: (val) => {
+      if (val && val.length > 0) {
+        return val[0].stock_value;
+      }
+    },
+  },
   {
     name: "stock_location",
     label: "Stock Location(s)",
-    field: "storage_location",
+    field: "inventory_positions",
+    format: (val) => {
+      if (val && val.length > 0) {
+        return val[0].storage_location;
+      }
+    },
   },
 ];
 
@@ -191,7 +243,7 @@ export default {
       loading.value = true;
 
       api
-        .get("/invoices/api/invoice_items", {
+        .get("/api/invoiceItem/", {
           params: {
             show_shipping: show_shipping_checkbox_model.value,
             show_not_shipped: show_not_shipped_checkbox_model.value,
@@ -203,8 +255,8 @@ export default {
         .then((response) => {
           pagination.value.page = page;
           pagination.value.rowsPerPage = rowsPerPage;
-          pagination.value.rowsNumber = response.data.total;
-          rows.value = response.data.rows;
+          pagination.value.rowsNumber = response.data.count;
+          rows.value = response.data.results;
         })
         .finally(() => {
           loading.value = false;

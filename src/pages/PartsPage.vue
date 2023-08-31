@@ -262,6 +262,17 @@ const columns_end = [
     label: "Storage temperature range",
     align: "left",
     field: "storage_conditions",
+    format: (val, row) => {
+      if (val) {
+        if (val.temperature_min && val.temperature_max && val.msl) {
+          return `${val.temperature_min}\u2103..${val.temperature_max}\u2103, MSL ${val.msl}`;
+        } else if (val.temperature_min && val.temperature_max) {
+          return `${val.temperature_min}\u2103..${val.temperature_max}\u2103`;
+        } else if (val.temperature_max) {
+          return `max. ${val.temperature_max}\u2103`;
+        }
+      }
+    },
   },
   {
     name: "manufacturer",
@@ -335,75 +346,95 @@ const resistor_columns = [
 
 const id_to_api_url = {
   0: {
-    url: "resistor",
+    part_types: "GR,R,RA,RCF,RTK,RTN,RMF",
     columns: columns_begin.concat(resistor_columns).concat(columns_end),
   },
   1: {
-    url: "capacitor",
+    part_types: "C,CC,MCC,CE,CP,CT",
     columns: columns_begin.concat(capacitor_columns).concat(columns_end),
   },
   2: {
-    url: "inductor",
+    part_types: "I",
     columns: columns_begin.concat(columns_end),
   },
   3: {
     url: "diode",
+    part_types: "D,DS,DZ",
     columns: columns_begin.concat(columns_end),
   },
   4: {
     url: "led",
+    part_types: "DLE",
     columns: columns_begin.concat(columns_end),
   },
   5: {
     url: "tvs",
+    part_types: "TVS",
     columns: columns_begin.concat(columns_end),
   },
   6: {
     url: "transistor-bipolar",
+    part_types: "TBP,TBN",
     columns: columns_begin.concat(columns_end),
   },
   7: {
     url: "ic",
+    part_types: "IC,ICV,ICR,IRF,IRS",
     columns: columns_begin.concat(columns_end),
   },
   8: {
     url: "ferrite-bead",
+    part_types: "FB",
     columns: columns_begin.concat(columns_end),
   },
   9: {
     url: "crystal",
+    part_types: "COS",
     columns: columns_begin.concat(columns_end),
   },
   10: {
     url: "connector",
+    part_types: "CON,COB,COT,COF,CO5,COI,COA",
     columns: columns_begin.concat(columns_end),
   },
   11: {
     url: "module",
+    part_types: "MSW,MSP",
     columns: columns_begin.concat(columns_end),
   },
   12: {
     url: "enclosure",
+    part_types: "E,EA",
     columns: columns_begin.concat(columns_end),
   },
   13: {
     url: "battery-holder",
+    part_types: "BH",
     columns: columns_begin.concat(columns_end),
   },
   14: {
     url: "switch",
+    part_types: "S",
     columns: columns_begin.concat(columns_end),
   },
   15: {
     url: "balun",
+    part_types: "BAL",
     columns: columns_begin.concat(balun_columns).concat(columns_end),
   },
   16: {
     url: "battery",
+    part_types: "B",
     columns: columns_begin.concat(columns_end),
   },
   17: {
     url: "bridge-rectifier",
+    part_types: "BRG",
+    columns: columns_begin.concat(columns_end),
+  },
+  18: {
+    url: "transistor-mosfet",
+    part_types: "MON,MOP",
     columns: columns_begin.concat(columns_end),
   },
 };
@@ -438,11 +469,12 @@ export default {
       const filter = props.filter;
       loading.value = true;
       const id = route.params.id;
-      const url = id_to_api_url[id];
+      const part_types = id_to_api_url[id] || { part_types: "" };
       api
         //.get(`/parts/api/get_part_list2/${id}`, {
-        .get(`/api/part/${url.url}`, {
+        .get(`/api/part-poli/`, {
           params: {
+            part_type__in: part_types.part_types,
             search: filter,
             pageSize: rowsPerPage,
             pageNumber: page,

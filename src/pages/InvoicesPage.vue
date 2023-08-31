@@ -110,9 +110,8 @@
 
           <q-form
             :action="backendURL + '/invoices/import'"
-            method="POST"
+            method="post"
             enctype="multipart/form-data"
-            @submit.prevent="onSubmit2"
             class="q-gutter-md"
           >
             <q-card-section>

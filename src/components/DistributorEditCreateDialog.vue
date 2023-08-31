@@ -55,7 +55,7 @@ export default defineComponent({
       required: true,
     },
     distributor_initial_id: {
-      type: Object,
+      type: Number,
     },
     onsave: {
       type: Function,
