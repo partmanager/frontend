@@ -5,9 +5,9 @@ const quantity_unit_set = [
 ];
 
 const currency_set = [
-  { label: "PLN", value: "PLN" },
-  { label: "USD", value: "USD" },
-  { label: "EUR", value: "EUR" },
+  { label: "PLN", value: 3 },
+  { label: "USD", value: 2 },
+  { label: "EUR", value: 1 },
 ];
 
 function get_quantity_unit_by_id(id) {

@@ -14,15 +14,7 @@
         hint="Invoice number"
         dense
       />
-      <q-select
-        v-model="bookkeping"
-        filled
-        label="Bookkepping type"
-        hint="Invoice number"
-        :options="bookkeeping_options"
-        :selected="invoice.bookkeping"
-        dense
-      />
+
       <q-input filled v-model="date" label="Date" hist="Invoice Date" dense>
         <template v-slot:append>
           <q-icon name="event" class="cursor-pointer">
@@ -79,11 +71,6 @@ import { api } from "boot/axios";
 import DistributorSelect from "./DistributorSelect.vue";
 import { get_distributor_by_id } from "src/boot/distributor_set";
 
-const bookkeeping_options = [
-  { label: "Private use, skip", value: "p" },
-  { label: "Track this invoice in bookkeeping", value: "k" },
-];
-
 export default defineComponent({
   name: "InvoiceEditCreateDialog",
   props: {
@@ -97,7 +84,6 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const bookkeping = ref();
     const date = ref();
     const file = ref();
     const distributor = ref();
@@ -111,7 +97,6 @@ export default defineComponent({
       const data = {
         number: invoice.value.number,
         invoice_date: date.value,
-        bookkeeping_type: bookkeping.value.value,
         distributor: distributor.value.id,
       };
       let formData = new FormData();
@@ -120,7 +105,6 @@ export default defineComponent({
       }
       formData.append("number", data.number);
       formData.append("invoice_date", data.invoice_date);
-      formData.append("bookkeeping_type", data.bookkeeping_type);
       formData.append("distributor", data.distributor);
       return formData;
     }
@@ -165,19 +149,11 @@ export default defineComponent({
           date.value = response.data.invoice_date;
 
           distributor.value = get_distributor_by_id(response.data.distributor);
-
-          if (response.data.bookkeeping_type == "p") {
-            bookkeping.value = bookkeeping_options[0];
-          } else {
-            bookkeping.value = bookkeeping_options[1];
-          }
         });
       }
     }
 
     return {
-      bookkeeping_options,
-      bookkeping,
       date,
       file,
       distributor,

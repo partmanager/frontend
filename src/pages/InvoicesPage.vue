@@ -46,12 +46,19 @@
           </template>
         </q-input>
       </template>
+      <template v-slot:body-cell-distributor="props">
+        <q-td :props="props">
+          <div>
+            <a :href="props.value.website_url">{{ props.value.name }}</a>
+          </div>
+        </q-td>
+      </template>
       <template v-slot:body-cell-invoice_number="props">
         <q-td :props="props">
           <div>
             <a :href="'#/invoices/' + props.row.id">{{ props.value }}</a>
             <q-badge
-              v-if="props.row.bookkeeping_type == 'k'"
+              v-if="props.row.bookkeeping == 'k'"
               color="purple"
               title="This invoice is tracked by bookkeping system."
             >
@@ -92,7 +99,7 @@
         <q-td :props="props">
           <div>
             <q-icon
-              v-if="props.row.allitems_mapped"
+              v-if="props.row.all_items_mapped"
               name="star"
               title="All invoice items are mapped to part or service."
             />
@@ -233,9 +240,6 @@ const columns = [
     label: "Distributor",
     align: "left",
     field: "distributor",
-    format: (val) => {
-      return distributor_id_to_name(val);
-    },
   },
   {
     name: "invoice_number",
@@ -252,12 +256,24 @@ const columns = [
     label: "Price",
     format: (val) => {
       if (val) {
-        return `${val.value} ${val.currency}`;
+        return `${val.net} ${val.currency_display}`;
       } else {
         return "Error";
       }
     },
     field: "price",
+  },
+  {
+    name: "local_price",
+    label: "Local Price",
+    format: (val) => {
+      if (val) {
+        return `${val.net} ${val.currency_display}`;
+      } else {
+        return "Error";
+      }
+    },
+    field: "local_price",
   },
 ];
 

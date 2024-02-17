@@ -2,9 +2,31 @@
   <div class="q-pa-md">
     <q-card align="justify">
       <q-card-section>
-        <p>Distributor: {{ invoice.distributor }}</p>
-        <p>Invoice number: {{ invoice.number }}</p>
-        <p>Invoice date: {{ invoice.date }}</p>
+        <div class="row">
+          <div class="col-3">
+            <p>Distributor: {{ invoice.distributor.name }}</p>
+            <p>Invoice number: {{ invoice.number }}</p>
+            <p>Invoice date: {{ invoice.date }}</p>
+          </div>
+          <div class="col-3">
+            <p>Items price: {{}}</p>
+            <p>Shipping price: {{}}</p>
+            <p>
+              Total price: {{ invoice.price.net }}
+              {{ invoice.price.currency_display }}
+            </p>
+          </div>
+          <div class="col-2">
+            <p>
+              <a :href="invoice.invoice_file">Invoice file</a>
+            </p>
+            <p>
+              <a :href="invoice.payment_confirmation_file">
+                Payment confirmation file</a
+              >
+            </p>
+          </div>
+        </div>
       </q-card-section>
     </q-card>
     <br />
@@ -15,6 +37,7 @@
       :rows="rows"
       :loading="loading"
       :filter="filter"
+      wrap-cells
     >
       <template v-slot:top>
         <div class="q-table__title">Invoice Items</div>
@@ -41,14 +64,8 @@
         <q-td :props="props">
           <div>
             {{ props.value }}
-            <q-icon
-              v-if="props.row.item_type == 's'"
-              name="local_shipping"
-            ></q-icon>
-            <q-icon
-              v-if="props.row.item_type == 'v'"
-              name="design_services"
-            ></q-icon>
+            <q-icon v-if="props.row.type == 3" name="local_shipping"></q-icon>
+            <q-icon v-if="props.row.type == 2" name="design_services"></q-icon>
           </div>
         </q-td>
       </template>
@@ -119,6 +136,7 @@
       v-model="invoice_item_edit_dialog"
       :invoice="invoice"
       :invoice_item_initial_data="active_invoice_item"
+      :invoice_item_id="active_invoice_item"
       :onsave="update_invoice_item"
       title="Edit Invoice Item"
     ></InvoiceItemEditCreateDialog>
@@ -162,6 +180,12 @@ const columns = [
   },
   { name: "action", label: "Action", align: "left" },
   {
+    name: "bookkeeping",
+    label: "Bookkeeping",
+    align: "left",
+    field: "bookkeeping_display",
+  },
+  {
     name: "distributor_order_number",
     label: "Distributor Order Number",
     align: "left",
@@ -199,73 +223,92 @@ const columns = [
   {
     name: "quantity_ordered",
     label: "Quantity Ordered",
-    field: "ordered_quantity",
+    field: "quantity",
+    format: (val) => val.ordered,
   },
   {
     name: "quantity_shipped",
     label: "Quantity Shipped",
-    field: "shipped_quantity",
+    field: "quantity",
+    format: (val) => val.shipped,
   },
   {
     name: "quantity_delivered",
     label: "Quantity Delivered",
-    field: "delivered_quantity",
+    field: "quantity",
+    format: (val) => val.delivered,
   },
   {
     name: "quantity_unit",
     label: "Quantity Unit",
-    field: "quantity_unit",
-    format: quantity_unit_id_to_name,
+    field: "quantity",
+    format: (val) => val.unit_display,
   },
   {
     name: "unit_price",
-    label: "Unit Price",
+    label: "Unit Price (net)",
     field: "unit_price",
     format: (v) => {
       if (v) {
-        return parseFloat(v.price).toFixed(4) + " " + v.currency;
+        return parseFloat(v.net).toFixed(4) + " " + v.currency_display;
       }
       return null;
     },
   },
   {
     name: "extended_price",
-    label: "Extended Price",
+    label: "Extended Price (net)",
     field: "extended_price",
     format: (v) => {
       if (v) {
-        return v.price + " " + v.currency;
+        return v.net + " " + v.currency_display;
       }
       return null;
     },
   },
   {
+    name: "lot_number",
+    label: "LOT Number",
+    field: "LOT",
+  },
+  {
+    name: "COO",
+    label: "COO",
+    field: "COO",
+  },
+  {
+    name: "ECCN",
+    label: "ECCN",
+    field: "ECCN",
+  },
+  {
+    name: "TARIC",
+    label: "TARIC",
+    field: "TARIC",
+  },
+  {
     name: "stock_quantity",
     label: "Stock Quantity",
-    field: "inventory_positions",
-    format: (val) => {
-      if (val && val.length > 0) {
-        return val[0].stock_quantity;
-      }
-    },
+    field: "stock_data",
+    format: (val) => val.quantity,
   },
   {
     name: "stock_value",
     label: "Stock Value",
-    field: "inventory_positions",
+    field: "stock_data",
     format: (val) => {
-      if (val && val.length > 0) {
-        return val[0].stock_value;
+      if (val.value_currency) {
+        return val.value + " " + val.value_currency;
       }
     },
   },
   {
     name: "stock_location",
     label: "Stock Location(s)",
-    field: "inventory_positions",
+    field: "stock_data",
     format: (val) => {
-      if (val && val.length > 0) {
-        return val[0].storage_location;
+      if (val.storage_location) {
+        return val.storage_location.join(",");
       }
     },
   },
@@ -285,9 +328,12 @@ export default {
     const loading = ref(false);
     const invoice = ref({
       id: null,
-      distributor: null,
+      distributor: { name: null },
       number: null,
       date: null,
+      price: { net: null, currency_display: null },
+      invoice_file: null,
+      payment_confirmation_file: null,
     });
 
     const active_invoice_item = ref();
@@ -320,14 +366,22 @@ export default {
     onMounted(() => {
       loading.value = true;
       api
-        .get(`/api/invoice-with-items/${id}`)
+        .get(`/api/invoice/${id}`)
         .then((response) => {
-          invoice.value.id = response.data.pk;
+          invoice.value.id = response.data.id;
           invoice.value.distributor = response.data.distributor;
           invoice.value.number = response.data.number;
           invoice.value.date = response.data.invoice_date;
+          invoice.value.price = response.data.price;
+          invoice.value.invoice_file = response.data.invoice_file;
+          invoice.value.payment_confirmation_file =
+            response.data.payment_confirmation_file;
 
-          rows.value = response.data.invoiceitem_set;
+          api
+            .get(`/api/invoiceItemWithStorage/?invoice=${id}`)
+            .then((response) => {
+              rows.value = response.data.results;
+            });
         })
         .finally(() => {
           loading.value = false;
