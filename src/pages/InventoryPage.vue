@@ -85,7 +85,7 @@
               {{ col.value }}
               <q-space />
               <q-badge
-                v-if="!props.row.invoice_present"
+                v-if="!props.row.invoice"
                 color="yellow-6"
                 text-color="black"
                 title="Invoice unassigned."
@@ -93,7 +93,7 @@
                 <q-icon name="warning" class="q-ml-xs" />
               </q-badge>
               <q-badge
-                v-if="!props.row.part_pk"
+                v-if="!props.row.part"
                 color="red"
                 title="Part unassigned."
               >
@@ -119,7 +119,7 @@
 
             <StockUpdatePopup
               v-if="col.name == 'stock'"
-              :stock="col.value"
+              :stock="props.row.stock"
               :id="props.row.id"
               :onsuccess="
                 (value) => {
@@ -135,10 +135,10 @@
                 color="primary"
                 icon="info"
                 title="Show part detail information"
-                :disabled="!props.row.part_pk"
+                :disabled="!props.row.part"
                 @click="
                   {
-                    part_detail_dialog_id = props.row.part_pk;
+                    part_detail_dialog_id = props.row.part;
                     part_detail_dialog = true;
                   }
                 "
@@ -164,7 +164,8 @@
           <q-td colspan="100%">
             <br />
             <div class="text-h4">
-              {{ props.row.manufacturer }} {{ props.row.part.name }}
+              {{ props.row.manufacturer ? props.row.manufacturer.name : "" }}
+              {{ props.row.name }}
             </div>
             <br />
             <q-separator />
@@ -172,13 +173,15 @@
             <div class="row">
               <div class="col">
                 Description:<br />
-                <div class="text-h5">{{ props.row.part.description }}</div>
+                <div class="text-h5">
+                  {{ props.row.description }}
+                </div>
                 <br />
                 Location:<br />
                 <strong>{{ props.row.storage_location.location }}</strong> ->
-                {{ props.row.stock }} {{ props.row.stock_unit }}<br />
-                Condition: {{ props.row.condition }}<br />
-                Status: {{ props.row.status }}<br />
+                {{ props.row.stock }} {{ props.row.stock_unit_display }}<br />
+                Condition: {{ props.row.condition_display }}<br />
+                Status: {{ props.row.status_display }}<br />
                 <br />
                 <form @submit.prevent.stop="onSubmit" class="row">
                   <q-input
@@ -244,7 +247,7 @@
 
             <q-input v-model="props.row.note" filled readonly type="textarea" />
 
-            <div v-if="props.row.invoice_number != Null">
+            <div v-if="props.row.invoice != Null">
               <br />
               <q-separator />
               <br />
@@ -256,13 +259,21 @@
                     name: 'distributor',
                     label: 'Distributor',
                     align: 'left',
-                    field: 'distributor',
+                    field: 'invoice',
+                    format: (val) => val.distributor.name,
                   },
                   {
                     name: 'invoice',
                     label: 'Invoice',
                     align: 'left',
-                    field: 'invoice_number',
+                    field: 'invoice',
+                    format: (val) => val.number + ' (' + val.invoice_date + ')',
+                  },
+                  {
+                    name: 'invoice_position',
+                    label: 'Invoice postion',
+                    align: 'left',
+                    field: 'position_in_invoice',
                   },
                   {
                     name: 'shipped_quantity',
@@ -271,10 +282,35 @@
                     field: 'shipped_quantity',
                   },
                   {
+                    name: 'LOT_number',
+                    label: 'LOT Number',
+                    align: 'left',
+                    field: 'LOT',
+                  },
+                  {
+                    name: 'COO',
+                    label: 'COO',
+                    align: 'left',
+                    field: 'COO',
+                  },
+                  {
+                    name: 'ECCN',
+                    label: 'ECCN',
+                    align: 'left',
+                    field: 'ECCN',
+                  },
+                  {
+                    name: 'TARIC',
+                    label: 'TARIC',
+                    align: 'left',
+                    field: 'TARIC',
+                  },
+                  {
                     name: 'price',
                     label: 'Unit Price',
                     align: 'left',
-                    field: 'price',
+                    field: 'unit_price',
+                    format: (val) => val.net + ' ' + val.currency_display,
                   },
                   {
                     name: 'stock_value',
@@ -283,7 +319,7 @@
                     field: 'stock_value',
                   },
                 ]"
-                :rows="[props.row]"
+                :rows="[props.row.invoice]"
               >
               </q-table>
             </div>
@@ -371,7 +407,7 @@
             <br />
             <q-separator />
             <div class="text-left">
-              Inventory ID: {{ props.row.id }}, Part ID: {{ props.row.part_pk }}
+              Inventory ID: {{ props.row.id }}, Part ID: {{ props.row.part }}
             </div>
           </q-td>
         </q-tr>
@@ -384,7 +420,6 @@
       v-model="add_item_dialog"
       :invoice_items_set="invoice_items_set"
       :manufacturer_set="manufacturer_set"
-      :distributor_set="distributor_set"
       :inventory_flat_category_set="inventory_flat_category_set"
       :storage_location_set="storage_location_set"
     >
@@ -395,7 +430,6 @@
       :isEdit="true"
       :invoice_items_set="invoice_items_set"
       :manufacturer_set="manufacturer_set"
-      :distributor_set="distributor_set"
       :inventory_flat_category_set="inventory_flat_category_set"
       :storage_location_set="storage_location_set"
       :item_initial_data="edit_item_initial_data"
@@ -413,7 +447,6 @@ import { useQuasar } from "quasar";
 import { ref, onMounted } from "vue";
 import { api } from "boot/axios";
 import { useRoute } from "vue-router";
-import { get_distributor_set } from "boot/distributor_set";
 
 import InventoryHistory from "../components/InventoryHistory.vue";
 import StockUpdatePopup from "src/components/StockUpdatePopup.vue";
@@ -426,8 +459,7 @@ const columns = [
     name: "name",
     label: "Name",
     align: "left",
-    format: (val, row) => `${val.name}`,
-    field: "part",
+    field: "name",
   },
   { name: "img", label: "Img", align: "left", field: "image" },
   { name: "action", label: "Action", align: "left" },
@@ -435,14 +467,18 @@ const columns = [
     name: "description",
     label: "Description",
     align: "left",
-    format: (val, row) => `${val.description}`,
-    field: "part",
+    field: "description",
   },
   {
-    name: "calories",
+    name: "manufacturer",
     align: "center",
     label: "Manufacturer",
     field: "manufacturer",
+    format: (val) => {
+      if (val) {
+        return val.name;
+      }
+    },
   },
   {
     name: "storage-location",
@@ -452,20 +488,59 @@ const columns = [
       return val.location;
     },
   },
-  { name: "condition", label: "Condition", field: "condition" },
+  { name: "condition", label: "Condition", field: "condition_display" },
   {
     name: "stock",
     label: "Stock",
     field: "stock",
+    format: (val, row) => {
+      return val + " " + row.stock_unit_display;
+    },
   },
   {
     name: "stock_available",
     label: "Available Stock",
-    field: "available_stock",
+    field: "stock",
+    format: (val, row) => {
+      if (row.reserved_quantity) {
+        return val - row.reserved_quantity + " " + row.stock_unit_display;
+      } else {
+        return val + " " + row.stock_unit_display;
+      }
+    },
   },
-  { name: "reserved", label: "Reserved", field: "reserved_quantity" },
-  { name: "stock_value", label: "Stock Value", field: "stock_value" },
-  { name: "price", label: "Price", field: "price" },
+  {
+    name: "reserved",
+    label: "Reserved",
+    field: "reserved_quantity",
+    format: (val, row) => {
+      return val + " " + row.stock_unit_display;
+    },
+  },
+  {
+    name: "stock_value",
+    label: "Stock Value",
+    field: "invoice",
+    format: (val, row) => {
+      if (val && val.unit_price) {
+        return (
+          parseFloat(val.unit_price.net * row.stock).toFixed(2) +
+          " " +
+          val.unit_price.currency_display
+        );
+      }
+    },
+  },
+  {
+    name: "price",
+    label: "Price",
+    field: "invoice",
+    format: (val) => {
+      if (val && val.unit_price) {
+        return val.unit_price.net + " " + val.unit_price.currency_display;
+      }
+    },
+  },
 ];
 
 export default {
@@ -484,7 +559,6 @@ export default {
     });
     const history_id = ref(NaN);
     const manufacturer_set = ref([]);
-    const distributor_set = ref();
     const storage_location_set = ref([]);
     const inventory_flat_category_set = ref([]);
     const invoice_items_set = ref([]);
@@ -529,8 +603,10 @@ export default {
 
       loading.value = true;
       api
-        .get(`/inventory/api/list/${id}`, {
+        // .get(`/inventory/api/list/${id}`, {
+        .get(`/api/inventory/`, {
           params: {
+            category: id,
             searchText: filter,
             pageSize: rowsPerPage,
             pageNumber: page,
@@ -541,8 +617,8 @@ export default {
         .then((response) => {
           pagination.value.page = page;
           pagination.value.rowsPerPage = rowsPerPage;
-          pagination.value.rowsNumber = response.data.total;
-          rows.value = response.data.rows;
+          pagination.value.rowsNumber = response.data.count;
+          rows.value = response.data.results;
           for (var i = 0; i < rows.value.length; i++) {
             rows.value[i].updated_quantity = rows.value[i].stock;
             rows.value[i].distributors_data = [];
@@ -553,22 +629,16 @@ export default {
         });
     }
 
-    function load_manufacturers() {
-      api.get("api/manufacturer").then((response) => {
-        manufacturer_set.value = response.data;
-      });
-    }
-    function load_distributors() {
-      // distributor_set.value = get_distributor_set().value;
-      api.get("/api/distributor").then((response) => {
-        distributor_set.value = response.data;
-      });
-    }
-    function load_storage_locations() {
-      api.get("/inventory/api/storage_location_flat_list").then((response) => {
-        storage_location_set.value = response.data.storage_locations;
-      });
-    }
+    // function load_manufacturers() {
+    //   api.get("api/manufacturer").then((response) => {
+    //     manufacturer_set.value = response.data;
+    //   });
+    // }
+    // function load_storage_locations() {
+    //   api.get("/inventory/api/storage_location_flat_list").then((response) => {
+    //     storage_location_set.value = response.data.storage_locations;
+    //   });
+    // }
     function load_inventory_categories() {
       api.get("/inventory/api/category_flat_list").then((response) => {
         // storage_location_set.value = response.data.storage_locations
@@ -625,9 +695,9 @@ export default {
     }
 
     onMounted(() => {
-      load_manufacturers();
-      load_distributors();
-      load_storage_locations();
+      // load_manufacturers();
+      // load_distributors();
+      // load_storage_locations();
       load_inventory_categories();
       load_invoice_items();
       // get initial data from server (1st page)
@@ -640,7 +710,6 @@ export default {
     return {
       part_detail_dialog,
       part_detail_dialog_id,
-      distributor_set,
       manufacturer_set,
       storage_location_set,
       inventory_flat_category_set,

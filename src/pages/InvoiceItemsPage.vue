@@ -102,22 +102,25 @@ const columns = [
     format: (val) => val.number,
   },
   {
-    name: "order_number",
-    label: "Order Number",
-    align: "left",
-    field: "order_number",
-  },
-  {
     name: "position",
     label: "Position",
     align: "left",
     field: "position_in_invoice",
   },
   {
+    name: "order_number",
+    label: "Order Number",
+    align: "left",
+    field: "order_number",
+  },
+  {
     name: "distributor_order_number",
     label: "Distributor Order Number",
     align: "left",
-    field: "distributor_number",
+    field: "distributor_order_number",
+    format: (val) => {
+      return val.don;
+    },
   },
   {
     name: "manufacturer_order_number",
@@ -126,8 +129,8 @@ const columns = [
     field: "distributor_order_number",
     format: (val) => {
       if (val)
-        if (val.mapped_mon) {
-          return val.mapped_mon.mon;
+        if (val.manufacturer_order_number) {
+          return val.manufacturer_order_number.mon;
         } else {
           return val.mon;
         }
@@ -140,10 +143,10 @@ const columns = [
     field: "distributor_order_number",
     format: (val) => {
       if (val) {
-        if (val.mapped_mon) {
-          return val.mapped_mon.manufacturer;
+        if (val.manufacturer_order_number) {
+          return val.manufacturer_order_number.manufacturer;
         } else {
-          return val.manufacturer;
+          return val.manufacturer_name;
         }
       }
     },
@@ -151,23 +154,42 @@ const columns = [
   {
     name: "quantity_ordered",
     label: "Quantity Ordered",
-    field: "ordered_quantity",
+    field: "quantity",
+    format: (val, row) => {
+      if (val) {
+        return val.ordered;
+      }
+    },
   },
   {
     name: "quantity_shipped",
     label: "Quantity Shipped",
-    field: "shipped_quantity",
+    field: "quantity",
+    format: (val, row) => {
+      if (val) {
+        return val.shipped;
+      }
+    },
   },
   {
     name: "quantity_delivered",
     label: "Quantity Delivered",
-    field: "delivered_quantity",
+    field: "quantity",
+    format: (val, row) => {
+      if (val) {
+        return val.delivered;
+      }
+    },
   },
   {
     name: "quantity_unit",
     label: "Quantity Unit",
-    field: "quantity_unit",
-    format: quantity_unit_id_to_name,
+    field: "quantity",
+    format: (val, row) => {
+      if (val) {
+        return val.unit_display;
+      }
+    },
   },
   {
     name: "unit_price",
@@ -175,7 +197,7 @@ const columns = [
     field: "unit_price",
     format: (v) => {
       if (v) {
-        return parseFloat(v.price).toFixed(4) + " " + v.currency;
+        return parseFloat(v.net).toFixed(4) + " " + v.currency_display;
       }
       return null;
     },
@@ -186,7 +208,7 @@ const columns = [
     field: "extended_price",
     format: (v) => {
       if (v) {
-        return v.price + " " + v.currency;
+        return v.net + " " + v.currency_display;
       }
       return null;
     },
@@ -194,30 +216,30 @@ const columns = [
   {
     name: "stock_quantity",
     label: "Stock Quantity",
-    field: "inventory_positions",
-    format: (val) => {
-      if (val && val.length > 0) {
-        return val[0].stock_quantity;
+    field: "stock_data",
+    format: (val, row) => {
+      if (val) {
+        return val.quantity;
       }
     },
   },
   {
     name: "stock_value",
     label: "Stock Value",
-    field: "inventory_positions",
+    field: "stock_data",
     format: (val) => {
-      if (val && val.length > 0) {
-        return val[0].stock_value;
+      if (val) {
+        return val.value + " " + val.value_currency;
       }
     },
   },
   {
     name: "stock_location",
     label: "Stock Location(s)",
-    field: "inventory_positions",
+    field: "stock_data",
     format: (val) => {
-      if (val && val.length > 0) {
-        return val[0].storage_location;
+      if (val && val.storage_location) {
+        return val.storage_location.join(", ");
       }
     },
   },
@@ -243,7 +265,7 @@ export default {
       loading.value = true;
 
       api
-        .get("/api/invoiceItem/", {
+        .get("/api/invoiceItemWithStorage/", {
           params: {
             show_shipping: show_shipping_checkbox_model.value,
             show_not_shipped: show_not_shipped_checkbox_model.value,

@@ -294,7 +294,7 @@ export default defineComponent({
     },
     distributor_set: {
       type: Array,
-      required: true,
+      required: false,
     },
     inventory_flat_category_set: {
       type: Array,

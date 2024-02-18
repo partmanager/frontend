@@ -7,19 +7,19 @@
         name: 'version',
         label: 'Distributor specific manufacturer name',
         align: 'left',
-        field: 'manufacturer_name_text',
+        field: 'manufacturer_name',
       },
       {
         name: 'date',
         label: 'Distributor specific order number',
         align: 'left',
-        field: 'distributor_order_number_text',
+        field: 'don',
       },
       {
         name: 'user',
         label: 'Manufacturer Order Number',
         align: 'left',
-        field: 'manufacturer_order_number_text',
+        field: 'mon',
       },
       {
         name: 'stock',

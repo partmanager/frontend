@@ -189,7 +189,8 @@ const columns = [
     name: "distributor_order_number",
     label: "Distributor Order Number",
     align: "left",
-    field: "distributor_number",
+    field: "distributor_order_number",
+    format: (val) => val.don,
   },
   {
     name: "manufacturer_order_number",
@@ -198,8 +199,8 @@ const columns = [
     field: "distributor_order_number",
     format: (val) => {
       if (val)
-        if (val.mapped_mon) {
-          return val.mapped_mon.mon;
+        if (val.manufacturer_order_number) {
+          return val.manufacturer_order_number.mon;
         } else {
           return val.mon;
         }
@@ -212,10 +213,10 @@ const columns = [
     field: "distributor_order_number",
     format: (val) => {
       if (val) {
-        if (val.mapped_mon) {
-          return val.mapped_mon.manufacturer;
+        if (val.manufacturer_order_number) {
+          return val.manufacturer_order_number.manufacturer;
         } else {
-          return val.manufacturer;
+          return val.manufacturer_name;
         }
       }
     },
