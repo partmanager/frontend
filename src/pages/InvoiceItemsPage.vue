@@ -95,11 +95,18 @@ import { quantity_unit_id_to_name } from "src/boot/choices.js";
 
 const columns = [
   {
+    name: "distributor",
+    label: "Distributor",
+    align: "left",
+    field: "invoice",
+    format: (val) => val.distributor.name,
+  },
+  {
     name: "invoice",
     label: "Invoice",
     align: "left",
     field: "invoice",
-    format: (val) => val.number,
+    format: (val) => val.number + " (" + val.invoice_date + ")",
   },
   {
     name: "position",
