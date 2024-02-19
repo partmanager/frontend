@@ -21,6 +21,15 @@
           label="Show Not Shipped"
           v-model="show_not_shipped_checkbox_model"
         ></q-checkbox>
+        <q-checkbox
+          label="Show privete use"
+          v-model="show_private_use_model"
+        ></q-checkbox>
+        <q-checkbox
+          toggle-indeterminate
+          label="Show with MON"
+          v-model="show_with_mon_model"
+        ></q-checkbox>
         <q-space />
         <q-input
           borderless
@@ -259,6 +268,8 @@ export default {
     const loading = ref(false);
     const show_shipping_checkbox_model = ref(false);
     const show_not_shipped_checkbox_model = ref(false);
+    const show_private_use_model = ref(false);
+    const show_with_mon_model = ref();
     const pagination = ref({
       page: 1,
       rowsPerPage: 10,
@@ -271,15 +282,30 @@ export default {
 
       loading.value = true;
 
+      var t = {
+        searchText: filter,
+        pageSize: rowsPerPage,
+        pageNumber: page,
+        type: [1],
+        bookkeeping: ["m"],
+        without_mon: !show_with_mon_model.value,
+      };
+
+      if (show_shipping_checkbox_model.value) {
+        t.type.push(3);
+      }
+
+      if (!show_not_shipped_checkbox_model.value) {
+        t.shipped_quantity__gt = 0;
+      }
+
+      if (show_private_use_model.value) {
+        t.bookkeeping.push("p");
+      }
+
       api
         .get("/api/invoiceItemWithStorage/", {
-          params: {
-            show_shipping: show_shipping_checkbox_model.value,
-            show_not_shipped: show_not_shipped_checkbox_model.value,
-            searchText: filter,
-            pageSize: rowsPerPage,
-            pageNumber: page,
-          },
+          params: t,
         })
         .then((response) => {
           pagination.value.page = page;
@@ -312,6 +338,8 @@ export default {
       loading,
       show_shipping_checkbox_model,
       show_not_shipped_checkbox_model,
+      show_private_use_model,
+      show_with_mon_model,
       pagination,
       columns,
       rows,
@@ -329,6 +357,18 @@ export default {
     );
     this.$watch(
       () => this.show_not_shipped_checkbox_model,
+      (toParams, previousParams) => {
+        this.reload_invoice_items();
+      }
+    );
+    this.$watch(
+      () => this.show_private_use_model,
+      (toParams, previousParams) => {
+        this.reload_invoice_items();
+      }
+    );
+    this.$watch(
+      () => this.show_with_mon_model,
       (toParams, previousParams) => {
         this.reload_invoice_items();
       }

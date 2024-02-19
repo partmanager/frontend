@@ -1,12 +1,16 @@
 import { boot } from "quasar/wrappers";
 import axios from "axios";
 import { backendURL } from "./backend";
+import qs from "qs";
 
 const api = axios.create({
   baseURL: backendURL,
   timeout: 20000,
   headers: {
     "Content-Type": "application/json; charset=utf-8",
+  },
+  paramsSerializer: function (params) {
+    return qs.stringify(params, { arrayFormat: "repeat" });
   },
 });
 
