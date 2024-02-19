@@ -246,17 +246,6 @@ const columns = [
     format: (val) => val.unit_display,
   },
   {
-    name: "unit_price",
-    label: "Unit Price (net)",
-    field: "unit_price",
-    format: (v) => {
-      if (v) {
-        return parseFloat(v.net).toFixed(4) + " " + v.currency_display;
-      }
-      return null;
-    },
-  },
-  {
     name: "extended_price",
     label: "Extended Price (net)",
     field: "extended_price",
@@ -286,6 +275,28 @@ const columns = [
     name: "TARIC",
     label: "TARIC",
     field: "TARIC",
+  },
+  {
+    name: "local_price",
+    label: "Local Extended Price (net)",
+    field: "local_price",
+    format: (v) => {
+      if (v) {
+        return v.net + " " + v.currency_display;
+      }
+      return null;
+    },
+  },
+  {
+    name: "unit_price",
+    label: "Unit Price (net)",
+    field: "unit_price",
+    format: (v) => {
+      if (v) {
+        return parseFloat(v.net).toFixed(4) + " " + v.currency_display;
+      }
+      return null;
+    },
   },
   {
     name: "stock_quantity",

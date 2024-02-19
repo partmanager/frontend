@@ -253,10 +253,22 @@ const columns = [
   { name: "status", label: "Status", field: "status" },
   {
     name: "price",
-    label: "Price",
+    label: "Price (net)",
     format: (val) => {
       if (val) {
         return `${val.net} ${val.currency_display}`;
+      } else {
+        return "Error";
+      }
+    },
+    field: "price",
+  },
+  {
+    name: "price",
+    label: "Price (gross)",
+    format: (val) => {
+      if (val) {
+        return `${val.gross} ${val.currency_display}`;
       } else {
         return "Error";
       }
