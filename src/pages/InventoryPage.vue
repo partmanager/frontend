@@ -340,25 +340,40 @@
                     name: 'distributor',
                     label: 'Distributor',
                     align: 'left',
-                    field: 'distributor',
+                    field: 'invoice_item',
+                    format: (val) => {
+                      if (val) {
+                        return val.invoice.distributor.name;
+                      }
+                    },
                   },
                   {
                     name: 'invoice',
                     label: 'Invoice',
                     align: 'left',
-                    field: 'invoice_number',
+                    field: 'invoice_item',
+                    format: (val) => {
+                      if (val) {
+                        return val.invoice.number;
+                      }
+                    },
                   },
                   {
                     name: 'shipped_quantity',
                     label: 'Shipped quantity',
                     align: 'left',
-                    field: 'shipped_quantity',
+                    field: 'invoice_item',
+                    format: (val) => {
+                      if (val) {
+                        return val.shipped_quantity;
+                      }
+                    },
                   },
                   {
                     name: 'stock_quantity',
                     label: 'Stock quantity',
                     align: 'left',
-                    field: 'stock_quantity',
+                    field: 'stock',
                   },
                   {
                     name: 'storage_location',
@@ -376,7 +391,16 @@
                     name: 'price',
                     label: 'Unit Price',
                     align: 'left',
-                    field: 'price',
+                    field: 'invoice_item',
+                    format: (val) => {
+                      if (val) {
+                        return (
+                          val.unit_price.net +
+                          ' ' +
+                          val.unit_price.currency_display
+                        );
+                      }
+                    },
                   },
                   {
                     name: 'stock_value',
@@ -385,7 +409,7 @@
                     field: 'stock_value',
                   },
                 ]"
-                :rows="[props.row.alternative_locations]"
+                :rows="props.row.alternative_locations"
               >
               </q-table>
             </div>
@@ -567,6 +591,7 @@ export default {
     const edit_item_initial_data = ref();
     const flagged = ref();
     const archived = ref(false);
+    const inventory_categories = ref();
 
     function update_item_stock(id, value, initialValue, comment) {
       if (value !== initialValue) {
@@ -601,18 +626,24 @@ export default {
       const filter = props.filter;
       const id = route.params.id;
 
+      var params = {
+        // category: id,
+        search: filter,
+        pageSize: rowsPerPage,
+        pageNumber: page,
+        flagged: flagged.value,
+        archived: archived.value,
+      };
+      if (id != 1) {
+        var filter_set = get_category_filterset(id);
+        if (filter_set) {
+          params.category__in = filter_set.join(",");
+        }
+      }
       loading.value = true;
       api
-        // .get(`/inventory/api/list/${id}`, {
         .get(`/api/inventory/`, {
-          params: {
-            category: id,
-            searchText: filter,
-            pageSize: rowsPerPage,
-            pageNumber: page,
-            flagged: flagged.value,
-            archived: archived.value,
-          },
+          params: params,
         })
         .then((response) => {
           pagination.value.page = page;
@@ -629,19 +660,19 @@ export default {
         });
     }
 
-    // function load_manufacturers() {
-    //   api.get("api/manufacturer").then((response) => {
-    //     manufacturer_set.value = response.data;
-    //   });
-    // }
-    // function load_storage_locations() {
-    //   api.get("/inventory/api/storage_location_flat_list").then((response) => {
-    //     storage_location_set.value = response.data.storage_locations;
-    //   });
-    // }
+    function load_categories() {
+      api.get("/api/inventory-category/").then((response) => {
+        inventory_categories.value = response.data;
+      });
+    }
+
+    function get_category_filterset(category_id) {
+      if (inventory_categories.value) {
+        return inventory_categories.value[category_id - 1].subcategories_id_set;
+      }
+    }
     function load_inventory_categories() {
       api.get("/inventory/api/category_flat_list").then((response) => {
-        // storage_location_set.value = response.data.storage_locations
         inventory_flat_category_set.value = response.data.categories;
       });
     }
@@ -695,9 +726,7 @@ export default {
     }
 
     onMounted(() => {
-      // load_manufacturers();
-      // load_distributors();
-      // load_storage_locations();
+      load_categories();
       load_inventory_categories();
       load_invoice_items();
       // get initial data from server (1st page)
