@@ -399,7 +399,7 @@ const id_to_api_url = {
   },
   11: {
     url: "module",
-    part_types: "MSW,MSP",
+    part_types: "MSW,MSP,M",
     columns: columns_begin.concat(columns_end),
   },
   12: {
@@ -424,7 +424,7 @@ const id_to_api_url = {
   },
   16: {
     url: "battery",
-    part_types: "B",
+    part_types: "BAT",
     columns: columns_begin.concat(columns_end),
   },
   17: {
@@ -471,7 +471,6 @@ export default {
       const id = route.params.id;
       const part_types = id_to_api_url[id] || { part_types: "" };
       api
-        //.get(`/parts/api/get_part_list2/${id}`, {
         .get(`/api/part-poli/`, {
           params: {
             part_type__in: part_types.part_types,
