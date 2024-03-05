@@ -124,14 +124,7 @@ const columns = [
     name: "name",
     label: "Name",
     align: "left",
-    field: "part",
-    format: (value, row) => {
-      if (value) {
-        return value.name;
-      } else {
-        return row.name;
-      }
-    },
+    field: "name",
   },
   { name: "img", label: "Img", align: "left", field: "image" },
   { name: "action", label: "Action", align: "left" },
@@ -139,24 +132,38 @@ const columns = [
     name: "description",
     label: "Description",
     align: "left",
-    format: (value, row) => {
-      if (value) {
-        return value.description;
-      } else {
-        return row.description;
-      }
-    },
-    field: "part",
+    field: "description",
   },
   {
-    name: "calories",
+    name: "manufacturer",
     align: "center",
     label: "Manufacturer",
     field: "manufacturer",
+    format: (val) => {
+      if (val) {
+        return val.name;
+      }
+    },
   },
-  { name: "condition", label: "Condition", field: "condition" },
-  { name: "invoice", label: "Invoice", field: "invoice_number" },
-  { name: "stock", label: "Stock", field: "stock" },
+  { name: "condition", label: "Condition", field: "condition_display" },
+  {
+    name: "invoice",
+    label: "Invoice",
+    field: "invoice",
+    format: (val) => {
+      if (val) {
+        return val.invoice.distributor.name + ": " + val.invoice.number;
+      }
+    },
+  },
+  {
+    name: "stock",
+    label: "Stock",
+    field: "stock",
+    format: (value, row) => {
+      return value + " " + row.stock_unit_display;
+    },
+  },
   {
     name: "stock_value",
     label: "Stock Value",
@@ -164,9 +171,9 @@ const columns = [
     format: (value, row) => {
       if (value) {
         return (
-          (row.stock * value.unit_price).toPrecision(4) +
+          (row.stock * value.unit_price.net).toPrecision(4) +
           " " +
-          value.price_currency
+          value.unit_price.currency_display
         );
       }
     },
@@ -177,7 +184,11 @@ const columns = [
     field: "invoice",
     format: (value, row) => {
       if (value) {
-        return value.unit_price + " " + value.price_currency;
+        return (
+          Number(value.unit_price.net).toPrecision(4) +
+          " " +
+          value.unit_price.currency_display
+        );
       }
     },
   },
