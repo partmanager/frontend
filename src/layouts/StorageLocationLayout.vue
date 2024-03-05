@@ -43,7 +43,12 @@
               color="primary"
               class="col"
             ></q-btn>
-            <q-btn label="Create Folder" color="primary" class="col"></q-btn>
+            <q-btn
+              label="Create Folder"
+              @click="create_storage_folder = true"
+              color="primary"
+              class="col"
+            ></q-btn>
           </div>
           <q-checkbox
             v-model="show_empty_only"
@@ -90,6 +95,13 @@
       :folders="storage_locations_folders"
       :onsave="api_create_storage_location"
     ></StorageLocationEditCreateDialog>
+
+    <StorageFolderEditCreateDialog
+      v-model="create_storage_folder"
+      title="Create Storage Folder"
+      :onsave="on_folder_created"
+    >
+    </StorageFolderEditCreateDialog>
   </q-layout>
 </template>
 
@@ -98,6 +110,7 @@ import { defineComponent, ref } from "vue";
 import { api } from "boot/axios";
 import { onMounted } from "vue";
 import StorageLocationEditCreateDialog from "src/components/StorageLocationEditCreateDialog.vue";
+import StorageFolderEditCreateDialog from "src/components/StorageFolderEditCreateDialog.vue";
 
 export default defineComponent({
   name: "MainLayout",
@@ -118,6 +131,7 @@ export default defineComponent({
     const simple = ref([]);
     const show_empty_only = ref(false);
     const create_storage_location = ref();
+    const create_storage_folder = ref();
     const storage_locations_folders = ref([]);
 
     function load_folders_data() {
@@ -147,6 +161,10 @@ export default defineComponent({
         .finally(() => {
           //loading.value = false;
         });
+    }
+
+    function on_folder_created() {
+      create_storage_folder.value = false;
     }
 
     function on_show_empty_only_updated(value, event) {
@@ -189,9 +207,14 @@ export default defineComponent({
       on_show_empty_only_updated,
       create_storage_location,
       storage_locations_folders,
+      create_storage_folder,
       api_create_storage_location,
+      on_folder_created,
     };
   },
-  components: { StorageLocationEditCreateDialog },
+  components: {
+    StorageLocationEditCreateDialog,
+    StorageFolderEditCreateDialog,
+  },
 });
 </script>
