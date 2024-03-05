@@ -48,9 +48,9 @@
         <br />
         <q-separator />
         <br />
-        <strong>Parts Count:</strong> {{ manufacturer.partCount }} <br />
+        <strong>Parts Count:</strong> {{ manufacturer.part_count }} <br />
         <strong>Manufacturer Order Number Count:</strong>
-        {{ manufacturer.orderNumberCount }}
+        {{ manufacturer.order_number_count }}
       </q-tab-panel>
       <q-tab-panel name="parts">
         <ManufacturerPartSeriesTable :rows="parts_series" :loading="loading">
@@ -105,7 +105,7 @@ const loading = ref(false);
 function load_manufacturer_detail(id) {
   loading.value = true;
   api
-    .post(`/manufacturers/detail/${id}`)
+    .get(`/api/manufacturer/${id}`)
     .then((response) => {
       manufacturer.value = response.data;
       parts_series.value = response.data.seriesData;
@@ -131,7 +131,6 @@ export default {
     }
 
     function update_manufacturer(manufacturer_data) {
-      // manufacturer_data.id = manufacturer.value.id;
       api
         .put(`/api/manufacturer/${manufacturer.value.id}/`, manufacturer_data)
         .then((response) => {
