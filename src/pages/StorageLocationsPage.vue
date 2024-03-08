@@ -102,9 +102,8 @@
     <StorageLocationEditCreateDialog
       v-model="storage_location_edit_dialog"
       title="Edit Storage Location"
-      :folders="storage_locations_folders"
-      :storage_location_initial_data="{ name: name, description: description }"
-      :onsave="save_edited_storage_location"
+      :storage_location_id="active_id"
+      :onsave="on_storage_location_saved"
     >
     </StorageLocationEditCreateDialog>
   </div>
@@ -209,34 +208,15 @@ export default {
     const history_id = ref(NaN);
     const storage_location_edit_dialog = ref(false);
     const storage_locations_folders = ref([]);
+    const active_id = ref();
 
-    function save_edited_storage_location(storage_location) {
+    function on_storage_location_saved(storage_location) {
       storage_location_edit_dialog.value = false;
-      const id = route.params.id;
-      var folder_id = null;
-
-      if (storage_location.folder) {
-        folder_id = storage_location.folder.id;
-      }
-      const data = {
-        id: id,
-        location: storage_location.name,
-        description: storage_location.description,
-        folder_id: folder_id,
-      };
-      api
-        .put(`api/storage_location/${id}/`, data)
-        .then((response) => {
-          name.value = response.data.name;
-          parts.value = response.data.rows;
-        })
-        .finally(() => {
-          loading.value = false;
-        });
     }
 
     function load_storage_location_data(id) {
       loading.value = true;
+      active_id.value = Number(id);
       api
         .get(`/api/storage_location_items/${id}`)
         .then((response) => {
@@ -270,17 +250,8 @@ export default {
       load_storage_location_data(route.params.id);
     }
 
-    function load_folders_data() {
-      api
-        .post(`inventory/api/storage_location/folders_list`)
-        .then((response) => {
-          storage_locations_folders.value = response.data.rows;
-        })
-        .finally(() => {});
-    }
-
     onMounted(() => {
-      load_folders_data();
+      // load_folders_data();
       load_storage_location_data(route.params.id);
     });
 
@@ -297,12 +268,13 @@ export default {
       history_id,
       storage_location_edit_dialog,
       storage_locations_folders,
+      active_id,
 
       onRequest,
       load_storage_location_data,
       delete_location,
       show_history,
-      save_edited_storage_location,
+      on_storage_location_saved,
     };
   },
   components: {

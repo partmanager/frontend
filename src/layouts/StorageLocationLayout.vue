@@ -92,8 +92,7 @@
     <StorageLocationEditCreateDialog
       v-model="create_storage_location"
       title="Create Storage Location"
-      :folders="storage_locations_folders"
-      :onsave="api_create_storage_location"
+      :onsave="on_location_created"
     ></StorageLocationEditCreateDialog>
 
     <StorageFolderEditCreateDialog
@@ -132,35 +131,9 @@ export default defineComponent({
     const show_empty_only = ref(false);
     const create_storage_location = ref();
     const create_storage_folder = ref();
-    const storage_locations_folders = ref([]);
 
-    function load_folders_data() {
-      api
-        .post(`inventory/api/storage_location/folders_list`)
-        .then((response) => {
-          storage_locations_folders.value = response.data.rows;
-        })
-        .finally(() => {});
-    }
-
-    function api_create_storage_location(storage_location) {
-      var folder_id = null;
-      if (storage_location.folder) {
-        folder_id = storage_location.folder.id;
-      }
-      const data = {
-        location: storage_location.name,
-        description: storage_location.description,
-        folder: folder_id,
-      };
-      api
-        .post(`/api/storage_location/`, data)
-        .then((response) => {
-          create_storage_location.value = false;
-        })
-        .finally(() => {
-          //loading.value = false;
-        });
+    function on_location_created() {
+      create_storage_location.value = false;
     }
 
     function on_folder_created() {
@@ -175,7 +148,6 @@ export default defineComponent({
         });
     }
     onMounted(() => {
-      load_folders_data();
       api
         .get(props.api_url, { params: { empty_only: false } })
         .then((response) => {
@@ -206,10 +178,9 @@ export default defineComponent({
       },
       on_show_empty_only_updated,
       create_storage_location,
-      storage_locations_folders,
       create_storage_folder,
-      api_create_storage_location,
       on_folder_created,
+      on_location_created,
     };
   },
   components: {
