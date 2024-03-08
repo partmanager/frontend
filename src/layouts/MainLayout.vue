@@ -44,6 +44,9 @@
                   >Update distributors MON and inventory MON</q-item-section
                 >
               </q-item>
+              <q-item clickable @click="update_partsdb">
+                <q-item-section>Update Parts DB</q-item-section>
+              </q-item>
             </q-list>
           </q-btn-dropdown>
         </q-tabs>
@@ -130,6 +133,10 @@ export default defineComponent({
       api.get("/inventory/api/update").then((response) => {});
     }
 
+    function update_partsdb() {
+      api.post("/updategit").then((response) => {});
+    }
+
     return {
       export_dialog,
       import_dialog,
@@ -156,6 +163,7 @@ export default defineComponent({
       },
       update_parts,
       update_distributors_and_inventory,
+      update_partsdb,
     };
   },
   components: { ExportDialog, ImportDialog },
