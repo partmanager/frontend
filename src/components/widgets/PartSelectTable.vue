@@ -47,7 +47,7 @@
     selection="single"
     row-key="id"
     @request="onPartRequest"
-    @update:selected="emitVal"
+    @update:selected="emitValtest"
     autogrow
   ></q-table>
 </template>
@@ -76,12 +76,16 @@ export default defineComponent({
     onsave: {
       type: Function,
     },
+    onSelectChange: {
+      type: Function,
+    },
   },
   methods: {
     emitVal(value) {
       if (value) {
         this.$emit("update:selected", value);
       }
+      props.onSelectChange(value);
     },
   },
   setup(props) {
@@ -95,6 +99,7 @@ export default defineComponent({
       rowsPerPage: 5,
       rowsNumber: 10,
     });
+    const emitValtest = ref(props.onSelectChange);
 
     const table_filter = ref({
       manufacturer: toRef(props, "manufacturer"),
@@ -145,6 +150,7 @@ export default defineComponent({
       add_item_parts_pagination,
 
       onPartRequest,
+      emitValtest,
     };
   },
 });

@@ -28,13 +28,10 @@
           dense
         />
 
-        <q-input
+        <DistributorOrderNumberSelect
           v-model="invoice_item.don"
-          filled
-          label="Distributor Order Number"
-          hint="Distributor specific order number"
-          dense
-        />
+          :distributor_id="props.invoice.distributor.id"
+        ></DistributorOrderNumberSelect>
 
         <div class="row">
           <q-input
@@ -163,6 +160,7 @@ import {
 } from "src/boot/choices.js";
 import QuantityUnitWidget from "./QuantityUnitWidget.vue";
 import CurrencySelectWidget from "./CurrencySelectWidget.vue";
+import DistributorOrderNumberSelect from "./widgets/DistributorOrderNumberSelect.vue";
 import BookkeepingTypeWidget from "./widgets/BookkeepingTypeWidget.vue";
 
 const merchandise_type = [
@@ -180,6 +178,7 @@ export default defineComponent({
   components: {
     QuantityUnitWidget,
     CurrencySelectWidget,
+    DistributorOrderNumberSelect,
     BookkeepingTypeWidget,
   },
   name: "InvoiceItemEditCreateDialog",
@@ -224,6 +223,7 @@ export default defineComponent({
       COO: null,
     });
     const backendError = ref();
+    const invoice_item_don_model = ref();
 
     function invoice_item_edit_load_data() {
       if (props.invoice_item_id) {
@@ -289,7 +289,7 @@ export default defineComponent({
         TARIC: invoice_item.value.TARIC,
         bookkeeping: invoice_item.value.bookkeeping_type.value,
         invoice: props.invoice.id,
-        distributor_order_number: invoice_item.value.don,
+        distributor_order_number: invoice_item.value.don.id,
       };
       return data;
     }
@@ -335,10 +335,12 @@ export default defineComponent({
     }
 
     return {
+      props,
       item_type_model,
       invoice_item,
       merchandise_type,
       backendError,
+      invoice_item_don_model,
 
       invoice_item_edit_load_data,
       validate_and_submit,

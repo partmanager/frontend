@@ -128,7 +128,7 @@
     <InvoiceItemEditCreateDialog
       v-model="invoice_item_create_dialog"
       :invoice="invoice"
-      :onsave="update_invoice_item"
+      :onsave="on_invoice_item_created"
       title="Create Invoice Item"
     ></InvoiceItemEditCreateDialog>
 
@@ -359,6 +359,10 @@ export default {
       invoice_item_create_dialog.value = true;
     }
 
+    function on_invoice_item_created() {
+      invoice_item_create_dialog.value = false;
+    }
+
     function update_invoice_item(data) {
       invoice_item_edit_dialog.value = false;
     }
@@ -390,7 +394,7 @@ export default {
             response.data.payment_confirmation_file;
 
           api
-            .get(`/api/invoiceItemWithStorage/?invoice=${id}`)
+            .get(`/api/invoiceItemWithStorage/?invoice=${id}&pageSize=10000`)
             .then((response) => {
               rows.value = response.data.results;
             });
@@ -420,6 +424,7 @@ export default {
       api_call_delete_invoice_item,
 
       update_invoice_item,
+      on_invoice_item_created,
     };
   },
   components: { InvoiceItemEditCreateDialog, DeleteConfirmationDialog },

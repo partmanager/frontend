@@ -1,5 +1,5 @@
 <template>
-  <q-dialog>
+  <q-dialog @before-show="load_initial_data">
     <q-card style="width: 700px; max-width: 80vw">
       <q-card-section>
         <div class="text-h6">{{ title }}</div>
@@ -52,6 +52,7 @@
 
 <script>
 import { ref, onUpdated, defineComponent } from "vue";
+import { api } from "boot/axios";
 
 export default defineComponent({
   name: "StorageLocationEditCreateDialog",
@@ -60,41 +61,97 @@ export default defineComponent({
       type: String,
       required: true,
     },
-    folders: {
-      type: Array,
-    },
-    storage_location_initial_data: {
-      type: Object,
+    storage_location_id: {
+      type: Number,
     },
     onsave: {
       type: Function,
     },
   },
   setup(props) {
-    var initial_name = null;
-    if (props.storage_location_initial_data) {
-      // eslint-disable-next-line
-      initial_name = props.storage_location_initial_data.name;
-    }
+    const loading = ref();
+    const folders = ref();
     const folder_select = ref();
     const storage_location = ref({
-      name: initial_name,
+      name: "",
       description: "",
       folder: null,
     });
     const filtered_folders_options = ref([]);
 
     function validate_and_submit() {
-      props.onsave(storage_location.value);
+      // props.onsave(storage_location.value);
+      save_edited_storage_location(storage_location.value);
+    }
+
+    function load_initial_data() {
+      load_folders_data();
+      if (props.storage_location_id) {
+        loading.value = true;
+        api
+          .get(`api/storage_location/${props.storage_location_id}/`)
+          .then((response) => {
+            storage_location.value.id = response.data.id;
+            storage_location.value.name = response.data.location;
+            storage_location.value.description = response.data.description;
+
+            storage_location.value.folder = folders.value.find(
+              (x) => x.id === response.data.folder
+            );
+          })
+          .finally(() => {
+            loading.value = false;
+          });
+      }
+    }
+
+    function save_edited_storage_location(storage_location) {
+      var folder_id = null;
+
+      if (storage_location.folder) {
+        folder_id = storage_location.folder.id;
+      }
+      const data = {
+        location: storage_location.name,
+        description: storage_location.description,
+        folder: folder_id,
+      };
+      if (props.storage_location_id) {
+        api
+          .put(`api/storage_location/${storage_location.id}/`, data)
+          .then((response) => {})
+          .finally(() => {
+            props.onsave(storage_location.value);
+          });
+      } else {
+        var new_id = null;
+        api
+          .post(`api/storage_location/`, data)
+          .then((response) => {
+            new_id = response.id;
+          })
+          .finally(() => {
+            props.onsave(new_id);
+          });
+      }
+    }
+
+    function load_folders_data() {
+      api
+        .get("api/storage_location_folder/")
+        .then((response) => {
+          folders.value = response.data;
+        })
+        .finally(() => {});
     }
 
     function folder_filter(val, update, abort) {
       update(() => {
         if (val === "") {
-          filtered_folders_options.value = props.folders;
+          filtered_folders_options.value = folders.value;
         } else {
           const needle = val.toLowerCase();
-          filtered_folders_options.value = props.folders.value.filter(
+          filtered_folders_options.value = folders.value.filter(
             (v) => v.name.toLowerCase().indexOf(needle) > -1
           );
         }
@@ -114,6 +171,7 @@ export default defineComponent({
 
       folder_filter,
       validate_and_submit,
+      load_initial_data,
     };
   },
 });
