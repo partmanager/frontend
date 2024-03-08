@@ -4,25 +4,25 @@
     :rows="distributor_order_numbers"
     :columns="[
       {
-        name: 'version',
+        name: 'distributor_spec_manufacturer_name',
         label: 'Distributor specific manufacturer name',
         align: 'left',
         field: 'manufacturer_name',
       },
       {
-        name: 'date',
+        name: 'don',
         label: 'Distributor specific order number',
         align: 'left',
         field: 'don',
       },
       {
-        name: 'user',
+        name: 'mon',
         label: 'Manufacturer Order Number',
         align: 'left',
         field: 'mon',
       },
       {
-        name: 'stock',
+        name: 'mon_map',
         label: 'Assigned Manufacturer Order Number',
         align: 'left',
         field: 'manufacturer_order_number_mon',
@@ -34,7 +34,18 @@
     :loading="don_loading"
     @request="request_distributor_order_numbers_list"
   >
-    <template v-slot:top-right>
+    <template v-slot:top>
+      <div class="q-pa-md q-gutter-sm">
+        <div class="q-table__title">Distributor Order Numbers</div>
+        <q-btn
+          color="primary"
+          label="Add"
+          title="Add distributor order number"
+          @click="don_create_dialog = true"
+        />
+        <q-btn color="primary" label="Import" disabled />
+        <q-btn color="primary" label="Export" disabled />
+      </div>
       <q-space />
       <q-input
         borderless
@@ -72,6 +83,14 @@
   </q-table>
 
   <DistributorOrderNumberConversionEditCreateDialog
+    v-model="don_create_dialog"
+    :title="'Create Distributor Order Number'"
+    :distributor_id="distributor_id"
+    :onsave="on_DON_create_dialog"
+  >
+  </DistributorOrderNumberConversionEditCreateDialog>
+
+  <DistributorOrderNumberConversionEditCreateDialog
     v-model="don_edit_dialog"
     :title="'Edit Distributor Order Number'"
     :edit_id="distributor_specific_order_number_id"
@@ -80,7 +99,7 @@
 
   <DeleteConfirmationDialog
     v-model="delete_confirmation_dialog"
-    :title="'Delete manufacturer name conversion from Distributor'"
+    :title="'Delete distributor order number from Distributor'"
     :ondelete="onDistributorOrderNumberDelete"
   >
     <template v-slot:message>
@@ -122,10 +141,12 @@ export default defineComponent({
       rowsNumber: 20,
     });
 
+    const don_create_dialog = ref();
     const delete_confirmation_dialog = ref();
     const don_edit_dialog = ref();
     const distributor_specyfic_manufacturer_order_number = ref();
     const distributor_specific_order_number_id = ref();
+    const active_id = ref();
 
     function request_distributor_order_numbers_list(table_props) {
       const { page, rowsPerPage } = table_props.pagination;
@@ -158,12 +179,29 @@ export default defineComponent({
     }
 
     function show_delete_confirmation_dialog(row) {
-      distributor_specyfic_manufacturer_order_number.value =
-        row.distributor_order_number_text;
+      active_id.value = row.id;
+      distributor_specyfic_manufacturer_order_number.value = row.don;
       delete_confirmation_dialog.value = true;
     }
 
-    function onDistributorOrderNumberDelete() {}
+    function on_DON_create_dialog() {
+      let props = { pagination: { rowsPerPage: 10, page: 1 }, filter: null };
+      request_distributor_order_numbers_list(props);
+      don_create_dialog.value = false;
+    }
+
+    function onDistributorOrderNumberDelete() {
+      api
+        .delete(`api/distributor-order-number/${active_id.value}`)
+        .then((response) => {
+          delete_confirmation_dialog.value = false;
+          let props = {
+            pagination: { rowsPerPage: 10, page: 1 },
+            filter: null,
+          };
+          request_distributor_order_numbers_list(props);
+        });
+    }
 
     onMounted(() => {
       let props = { pagination: { rowsPerPage: 10, page: 1 }, filter: null };
@@ -180,6 +218,9 @@ export default defineComponent({
 
       delete_confirmation_dialog,
       onDistributorOrderNumberDelete,
+
+      don_create_dialog,
+      on_DON_create_dialog,
 
       don_edit_dialog,
       distributor_specyfic_manufacturer_order_number,

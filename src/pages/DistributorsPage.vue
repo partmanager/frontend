@@ -121,7 +121,7 @@ function load_distributor_manufacturers(id) {
 export default {
   setup() {
     const route = useRoute();
-    const active_id = Number(route.params.id);
+    const active_id = ref(Number(route.params.id));
     const distributor_order_numbers_table = ref();
     const filter = ref("");
     const distributor_edit_dialog_model = ref();
