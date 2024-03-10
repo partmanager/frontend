@@ -69,7 +69,6 @@
 import { ref, defineComponent } from "vue";
 import { api } from "boot/axios";
 import DistributorSelect from "./DistributorSelect.vue";
-import { get_distributor_by_id } from "src/boot/distributor_set";
 
 export default defineComponent({
   name: "InvoiceEditCreateDialog",
@@ -87,7 +86,7 @@ export default defineComponent({
     const date = ref();
     const file = ref();
     const distributor = ref();
-    const invoice = ref({ number: null, bookkeping: null, date: null });
+    const invoice = ref({ number: null, date: null });
 
     function validate() {
       return true;
@@ -143,12 +142,11 @@ export default defineComponent({
       if (props.id_to_edit) {
         api.get(`/api/invoice/${props.id_to_edit}/`).then((response) => {
           invoice.value.number = response.data.number;
-          invoice.value.bookkeping = response.data.bookkeping_type;
           invoice.value.date = response.data.invoice_date;
 
           date.value = response.data.invoice_date;
 
-          distributor.value = get_distributor_by_id(response.data.distributor);
+          distributor.value = response.data.distributor;
         });
       }
     }
