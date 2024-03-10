@@ -365,6 +365,7 @@ export default {
 
     function update_invoice_item(data) {
       invoice_item_edit_dialog.value = false;
+      load_invoice_items();
     }
 
     function delete_invoice_item(data) {
@@ -377,6 +378,14 @@ export default {
         .delete(`/api/invoiceItem/${active_invoice_item.value.id}/`)
         .then((response) => {});
       delete_confirmation_dialog.value = false;
+    }
+
+    function load_invoice_items() {
+      api
+        .get(`/api/invoiceItemWithStorage/?invoice=${id}&pageSize=10000`)
+        .then((response) => {
+          rows.value = response.data.results;
+        });
     }
 
     onMounted(() => {
@@ -393,11 +402,7 @@ export default {
           invoice.value.payment_confirmation_file =
             response.data.payment_confirmation_file;
 
-          api
-            .get(`/api/invoiceItemWithStorage/?invoice=${id}&pageSize=10000`)
-            .then((response) => {
-              rows.value = response.data.results;
-            });
+          load_invoice_items();
         })
         .finally(() => {
           loading.value = false;

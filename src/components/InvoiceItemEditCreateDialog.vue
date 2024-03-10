@@ -233,7 +233,7 @@ export default defineComponent({
             invoice_item.value.position = response.data.position_in_invoice;
             invoice_item.value.order_number = response.data.order_number;
             invoice_item.value.item_type = response.data.type;
-            invoice_item.value.don = response.data.distributor_order_number;
+            // invoice_item.value.don = response.data.distributor_order_number;
             invoice_item.value.qty_ordered = response.data.ordered_quantity;
             invoice_item.value.qty_shipped = response.data.shipped_quantity;
             invoice_item.value.qty_delivered = response.data.shipped_delivered;
@@ -254,6 +254,15 @@ export default defineComponent({
             invoice_item.value.ECCN = response.data.ECCN;
             invoice_item.value.TARIC = response.data.TARIC;
             invoice_item.value.COO = response.data.COO;
+
+            api
+              .get(
+                `api/distributor-order-number/${response.data.distributor_order_number}/`
+              )
+              .then((response) => {
+                invoice_item.value.don = response.data;
+                // filtered_don_set.value = response.data.results;
+              });
           });
       }
     }
@@ -275,7 +284,7 @@ export default defineComponent({
         order_number: invoice_item.value.order_number,
         type: item_type_model.value.id,
         position_in_invoice: invoice_item.value.position,
-        distributor_number: invoice_item.value.don,
+        // distributor_number: invoice_item.value.don,
         ordered_quantity: invoice_item.value.qty_ordered,
         shipped_quantity: invoice_item.value.qty_shipped,
         delivered_quantity: invoice_item.value.qty_delivered,
