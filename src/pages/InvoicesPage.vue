@@ -31,7 +31,6 @@
             label="Import"
             @click="invoice_import_dialog = true"
           />
-          <q-btn color="primary" label="Export" />
         </div>
         <q-space />
         <q-input
@@ -116,7 +115,7 @@
           </q-card-section>
 
           <q-form
-            :action="backendURL + '/invoices/import'"
+            :action="backendURL + '/api/invoiceImport'"
             method="post"
             enctype="multipart/form-data"
             class="q-gutter-md"
