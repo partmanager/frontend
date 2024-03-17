@@ -141,10 +141,10 @@ export default defineComponent({
     onUpdated(() => {
       if (props.edit_id) {
         get_distributor_order_number(props.edit_id).then((response) => {
-          distirbutor_specyfic_order_number.value =
-            response.data.distributor_order_number_text;
+          distirbutor_specyfic_order_number.value = response.data.don;
           distirbutor_specyfic_manufacturer_name.value =
-            response.data.manufacturer_name_text;
+            response.data.manufacturer_name;
+          distirbutor_specyfic_mon.value = response.data.mon;
         });
       }
     });

@@ -177,9 +177,14 @@
                   {{ props.row.description }}
                 </div>
                 <br />
-                Location:<br />
-                <strong>{{ props.row.storage_location.location }}</strong> ->
-                {{ props.row.stock }} {{ props.row.stock_unit_display }}<br />
+                Location:
+                <strong>{{
+                  props.row.storage_location
+                    ? props.row.storage_location.location
+                    : "Error, location unknown"
+                }}</strong>
+                -> {{ props.row.stock }} {{ props.row.stock_unit_display
+                }}<br />
                 Condition: {{ props.row.condition_display }}<br />
                 Status: {{ props.row.status_display }}<br />
                 <br />
@@ -442,7 +447,6 @@
 
     <InventoryItemEditCreateDialog
       v-model="add_item_dialog"
-      :invoice_items_set="invoice_items_set"
       :manufacturer_set="manufacturer_set"
       :inventory_flat_category_set="inventory_flat_category_set"
       :storage_location_set="storage_location_set"
@@ -452,7 +456,6 @@
     <InventoryItemEditCreateDialog
       v-model="edit_item_dialog"
       :isEdit="true"
-      :invoice_items_set="invoice_items_set"
       :manufacturer_set="manufacturer_set"
       :inventory_flat_category_set="inventory_flat_category_set"
       :storage_location_set="storage_location_set"
@@ -492,6 +495,13 @@ const columns = [
     label: "Description",
     align: "left",
     field: "description",
+    format: (val) => {
+      if (val) {
+        return val;
+      } else {
+        return "";
+      }
+    },
   },
   {
     name: "manufacturer",
@@ -509,7 +519,9 @@ const columns = [
     label: "Storage Location",
     field: "storage_location",
     format: (val) => {
-      return val.location;
+      if (val) {
+        return val.location;
+      }
     },
   },
   { name: "condition", label: "Condition", field: "condition_display" },
@@ -585,7 +597,6 @@ export default {
     const manufacturer_set = ref([]);
     const storage_location_set = ref([]);
     const inventory_flat_category_set = ref([]);
-    const invoice_items_set = ref([]);
     const edit_item_dialog = ref(false);
     const edit_item_dialog_id = ref();
     const edit_item_initial_data = ref();
@@ -676,11 +687,6 @@ export default {
         inventory_flat_category_set.value = response.data.categories;
       });
     }
-    function load_invoice_items() {
-      api.get("/invoices/api/invoice_items_options").then((response) => {
-        invoice_items_set.value = response.data.rows;
-      });
-    }
 
     function archive_item(id, archive_or_remove_archived_flag) {
       loading.value = true;
@@ -728,7 +734,6 @@ export default {
     onMounted(() => {
       load_categories();
       load_inventory_categories();
-      load_invoice_items();
       // get initial data from server (1st page)
       onRequest({
         pagination: pagination.value,
@@ -742,7 +747,6 @@ export default {
       manufacturer_set,
       storage_location_set,
       inventory_flat_category_set,
-      invoice_items_set,
       filter,
       loading,
       pagination,

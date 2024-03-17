@@ -1,7 +1,7 @@
 <template>
   <q-select
     @before-show="load_initial_data"
-    v-model="manufacturer"
+    v-model="manufacturer_model"
     option-label="name"
     :options="filtered_manufacturer_set"
     @filter="filter_manufacturers_select"
@@ -17,18 +17,13 @@
 
 <script>
 import { ref, onMounted, defineComponent } from "vue";
-import { get_manufacturer_set } from "src/boot/manufacturer_api";
+import { api } from "boot/axios";
 
 export default defineComponent({
   name: "ManufacturerSelect",
-  props: {
-    initial_manufacturer_name: {
-      type: String,
-    },
-  },
-  setup(props) {
-    const manufacturer = ref();
-    const manufacturer_set = ref(get_manufacturer_set());
+  setup() {
+    const manufacturer_model = ref();
+    const manufacturer_set = ref([]);
     const filtered_manufacturer_set = ref();
 
     function filterFn(
@@ -61,15 +56,10 @@ export default defineComponent({
     }
 
     function load_initial_data() {
-      if (props.initial_manufacturer_name) {
-        const needle = props.initial_manufacturer_name.toLowerCase();
-        filtered_manufacturer_set.value = manufacturer_set.value.filter(
-          (v) => v.name.toLowerCase().indexOf(needle) > -1
-        );
-
-        //filtered_manufacturer_set;
-        //filter_manufacturers_select(props.initial_manufacturer_name);
-        //manufacturer.value = props.initial_manufacturer_name;
+      if (manufacturer_set.value.length == 0) {
+        api.get("api/manufacturer").then((response) => {
+          manufacturer_set.value = response.data;
+        });
       }
     }
 
@@ -78,12 +68,20 @@ export default defineComponent({
     });
 
     return {
-      manufacturer,
+      manufacturer_model,
       filtered_manufacturer_set,
 
       load_initial_data,
       filter_manufacturers_select,
     };
+  },
+  created() {
+    this.$watch(
+      () => this.$props.initial_manufacturer_id,
+      (toParams, previousParams) => {
+        this.load_initial_data();
+      }
+    );
   },
 });
 </script>

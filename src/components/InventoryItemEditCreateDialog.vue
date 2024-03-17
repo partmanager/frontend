@@ -15,19 +15,8 @@
       />
       <q-card-section style="max-height: 60vh" class="scroll">
         <div class="row">
-          <q-select
-            v-model="add_item_manufacturer"
-            option-label="name"
-            :options="add_item_manufacutrer_options"
-            @filter="filter_manufacturer_select"
-            use-input
-            fill-input
-            hide-selected
-            clearable
-            filled
-            class="col-3"
-            label="Manufacturer"
-          />
+          <ManufacturerSelect v-model="add_item_manufacturer">
+          </ManufacturerSelect>
           <br />
           <q-input
             class="col-9"
@@ -135,22 +124,14 @@
           >
           </q-checkbox>
 
-          <q-select
-            label="Storage Location"
-            ref="add_item_storage_location_ref"
+          <StorageLocationSelect
             v-model="add_item_storage_location"
-            option-label="name"
-            :options="add_storage_location_options"
+            ref="add_item_storage_location_ref"
             :rules="[(val) => !!val || 'Storage location is required']"
-            @filter="filter_storage_location_select"
-            use-input
             clearable
-            fill-input
-            hide-selected
             dense
-            filled
             class="col-9"
-          />
+          ></StorageLocationSelect>
         </div>
 
         <div class="row">
@@ -196,34 +177,22 @@
         />
         <div class="row">
           <div class="col-4">
-            <q-select
-              label="Distributor"
+            <DistributorSelect
               v-model="add_item_distributor"
-              option-label="name"
-              :options="add_item_distributor_options"
-              @filter="filter_distributors_select"
-              use-input
-              fill-input
-              hide-selected
-              clearable
+              :initial_distributor="initial_distributor_id"
               dense
-              filled
-            />
+              clearable
+            ></DistributorSelect>
           </div>
           <div class="col-8">
-            <q-select
-              label="Invoice"
+            <InvoiceItemSelectWidget
               v-model="add_item_invoice"
-              option-label="label"
-              :options="add_item_invoice_options"
-              @filter="filter_invoice_item_select"
-              use-input
-              fill-input
-              hide-selected
+              :distributor="add_item_distributor"
+              :initial_invoice_item_id="initial_invoice_id"
+              :distributor_required="true"
               clearable
               dense
-              filled
-            />
+            ></InvoiceItemSelectWidget>
           </div>
         </div>
       </q-card-section>
@@ -254,6 +223,10 @@
 <script>
 import { ref, onMounted, onUpdated, defineComponent } from "vue";
 import { api } from "boot/axios";
+import ManufacturerSelect from "./widgets/ManufacturerSelect.vue";
+import DistributorSelect from "./widgets/DistributorSelect.vue";
+import InvoiceItemSelectWidget from "./widgets/InvoiceItemSelectWidget.vue";
+import StorageLocationSelect from "./widgets/StorageLocationSelectWidget.vue";
 
 const add_item_quantity_unit_options = [
   { name: "unknown", id: null },
@@ -283,18 +256,6 @@ export default defineComponent({
     isEdit: {
       type: Boolean,
       default: false,
-    },
-    invoice_items_set: {
-      type: Array,
-      required: true,
-    },
-    manufacturer_set: {
-      type: Array,
-      required: true,
-    },
-    distributor_set: {
-      type: Array,
-      required: false,
     },
     inventory_flat_category_set: {
       type: Array,
@@ -332,7 +293,6 @@ export default defineComponent({
     const add_item_condition = ref();
     const add_item_condition_ref = ref();
     const add_item_invoice = ref();
-    const add_item_invoice_options = ref(props.invoice_items_set.value);
     const add_item_distributor = ref();
     const add_item_category = ref();
     const add_item_category_ref = ref();
@@ -340,56 +300,31 @@ export default defineComponent({
     const add_item_storage_location_ref = ref();
     const add_item_inventory_status = ref();
     const add_item_inventory_status_ref = ref();
-    const add_item_manufacutrer_options = ref(props.manufacturer_set);
-    const add_item_distributor_options = ref(props.distributor_set);
     const add_item_inventory_category_options = ref(
       props.inventory_flat_category_set
     );
-    const add_storage_location_options = ref(props.storage_location_set);
     const add_item_parts_selected = ref([]);
     const empty_location_only_checkbox = ref(false);
+    const initial = ref({ manufacturer_id: null, invoice_id: null });
+    const initial_invoice_id = ref();
+    const initial_distributor_id = ref();
 
     function add_item() {
       if (!validate_inputs()) {
         // form has error
       } else {
-        var mon = null;
-        if (add_item_parts_selected.value.length === 1) {
-          mon = add_item_parts_selected.value[0].id;
-        }
-        var invoice_id = null;
-        if (add_item_invoice.value) {
-          invoice_id = add_item_invoice.value.id;
-        }
-        const data = {
-          mon: mon,
-          name: add_item_name.value,
-          description: add_item_description.value,
-          note: add_item_note.value,
-          manufacturer: add_item_manufacturer.value.id,
-          storage_location: add_item_storage_location.value.id,
-          invoice: invoice_id,
-          quantity: {
-            value: add_item_quantity.value,
-            unit: add_item_quantity_unit.value.id,
-          },
-          condition: add_item_condition.value.id,
-          status: add_item_inventory_status.value.id,
-          category: add_item_category.value.id,
-        };
+        const data = widgets_to_data();
         api
-          .post(`/inventory/api/add_item`, data)
+          .post(`/api/inventory/`, data)
           .then((response) => {
-            if (response.data.status == "OK") {
+            if (response.data.id !== null) {
               clear_form();
               if (props.onsave) {
                 props.onsave();
               }
             }
           })
-          .finally(() => {
-            // itemHistoryLoading.value = false
-          });
+          .finally(() => {});
       }
     }
 
@@ -397,51 +332,56 @@ export default defineComponent({
       if (!validate_inputs()) {
         // form has error
       } else {
-        var mon = null;
-        if (add_item_parts_selected.value.length === 1) {
-          mon = add_item_parts_selected.value[0].id;
-        }
-        var invoice_id = null;
-        if (add_item_invoice.value) {
-          invoice_id = add_item_invoice.value.id;
-        }
-        const data = {
-          id: props.item_initial_data.id,
-          mon: mon,
-          name: add_item_name.value,
-          description: add_item_description.value,
-          note: add_item_note.value,
-          manufacturer: add_item_manufacturer.value.id,
-          storage_location: add_item_storage_location.value.id,
-          invoice: invoice_id,
-          quantity: {
-            value: add_item_quantity.value,
-            unit: add_item_quantity_unit.value.id,
-          },
-          condition: add_item_condition.value.id,
-          status: add_item_inventory_status.value.id,
-          category: add_item_category.value.id,
-        };
+        const data = widgets_to_data();
         api
-          .post(`/inventory/api/update_item`, data)
+          .put(`/api/inventory/${props.item_initial_data.id}/`, data)
           .then((response) => {
-            if (response.data.status == "OK") {
+            if (response.data.id !== null) {
               clear_form();
               if (props.onsave) {
                 props.onsave();
               }
             }
           })
-          .finally(() => {
-            // itemHistoryLoading.value = false
-          });
+          .finally(() => {});
       }
+    }
+
+    function widgets_to_data() {
+      var mon = null;
+      if (add_item_parts_selected.value.length === 1) {
+        mon = add_item_parts_selected.value[0].id;
+      }
+      var invoice_id = null;
+      console.log("Invoice", add_item_invoice.value);
+      if (add_item_invoice.value) {
+        invoice_id = add_item_invoice.value.id;
+      }
+      const data = {
+        name: add_item_name.value,
+        description: add_item_description.value,
+        note: add_item_note.value,
+        manufacturer: add_item_manufacturer.value.id,
+        part: mon,
+        storage_location: add_item_storage_location.value.id,
+        invoice: invoice_id,
+        stock: add_item_quantity.value,
+        stock_unit: add_item_quantity_unit.value.id,
+        condition: add_item_condition.value.id,
+        status: add_item_inventory_status.value.id,
+        category: add_item_category.value.id,
+        //LOT
+        //ECCN
+        //COO
+        //TARIC
+      };
+      return data;
     }
 
     function validate_inputs() {
       add_item_quantity_ref.value.validate();
       add_item_quantity_unit_ref.value.validate();
-      add_item_storage_location_ref.value.validate();
+      // add_item_storage_location_ref.value.validate();
       add_item_condition_ref.value.validate();
       add_item_inventory_status_ref.value.validate();
       add_item_category_ref.value.validate();
@@ -473,31 +413,24 @@ export default defineComponent({
       add_item_inventory_status.value = null;
       add_item_category.value = null;
       add_item_distributor.value = null;
-      add_item_quantity_ref.value.resetValidation();
-      add_item_storage_location_ref.value.resetValidation();
-      add_item_condition_ref.value.resetValidation();
-      add_item_inventory_status_ref.value.resetValidation();
-      add_item_category_ref.value.resetValidation();
+      //add_item_quantity_ref.value.resetValidation();
+      // add_item_storage_location_ref.value.resetValidation();
+      // add_item_condition_ref.value.resetValidation();
+      //add_item_inventory_status_ref.value.resetValidation();
+      //add_item_category_ref.value.resetValidation();
     }
 
     function set_initial_data(initial_data) {
-      add_item_name.value = initial_data.part.name;
-      add_item_description.value = initial_data.part.description;
+      add_item_name.value = initial_data.name;
+      add_item_description.value = initial_data.description;
       add_item_note.value = initial_data.note;
       add_item_quantity.value = initial_data.stock;
       add_item_quantity_unit.value = add_item_quantity_unit_options.filter(
         (value) => value.id == initial_data.stock_unit
       )[0];
-      add_item_storage_location.value = props.storage_location_set.filter(
-        (value) => value.id == initial_data.storage_location.id
-      )[0];
-      if (initial_data.manufacturer_id) {
-        add_item_manufacturer.value = props.manufacturer_set.filter(
-          (value) => value.id == initial_data.manufacturer_id
-        )[0];
-      } else {
-        add_item_manufacturer.value = null;
-      }
+      add_item_storage_location.value = initial_data.storage_location;
+      add_item_manufacturer.value = initial_data.manufacturer;
+
       add_item_condition.value = add_item_condition_status_options.filter(
         (value) => value.id == initial_data.condition
       )[0];
@@ -510,21 +443,17 @@ export default defineComponent({
           (value) => value.id == initial_data.category
         )[0];
       }
-      if (initial_data.distributor_id) {
-        add_item_distributor.value = props.distributor_set.filter(
-          (value) => value.id == initial_data.distributor_id
-        )[0];
-      }
-      if (initial_data.invoice_id) {
-        add_item_invoice.value = props.invoice_items_set.filter(
-          (value) => value.id == initial_data.invoice_id
-        )[0];
+
+      if (initial_data.invoice && initial_data.invoice.id) {
+        // add_item_invoice.value = initial_data.invoice;
+        initial_invoice_id.value = initial_data.invoice.id;
+        add_item_distributor.value = initial_data.invoice.invoice.distributor;
       } else {
-        add_item_invoice.value = null;
+        initial_invoice_id.value = null;
       }
       onPartRequest({
         pagination: add_item_parts_pagination.value,
-        filter: initial_data.part.name,
+        filter: initial_data.part,
       });
       add_item_parts_selected.value = add_item_parts.value.filter(
         (value) => value.id == initial_data.part.mon_id
@@ -596,13 +525,18 @@ export default defineComponent({
         });
     }
 
-    onUpdated(() => {
-      if (props.item_initial_data) {
-        set_initial_data(props.item_initial_data);
+    function load_initial_data(id) {
+      // load_invoice_items();
+      clear_form();
+      if (id) {
+        api.get(`/api/inventory/${id}/`).then((response) => {
+          set_initial_data(response.data);
+        });
       }
-    });
+    }
 
     return {
+      initial,
       table_ref,
       add_item_quantity_unit_options,
       add_item_inventory_status_options,
@@ -626,50 +560,21 @@ export default defineComponent({
       add_item_category,
       add_item_category_ref,
       add_item_invoice,
-      add_item_invoice_options,
       add_item_manufacturer,
       add_item_distributor,
       add_item_name,
       add_item_barcode,
-      add_item_manufacutrer_options,
-      add_item_distributor_options,
       add_item_inventory_category_options,
-      add_storage_location_options,
       empty_location_only_checkbox,
-      // _add_item,
       add_item_barcode_search,
       add_item,
       update_item,
       set_initial_data,
+      load_initial_data,
       onPartRequest,
+      initial_invoice_id,
+      initial_distributor_id,
 
-      filter_distributors_select(val, update, abort) {
-        return filterFn(
-          val,
-          update,
-          abort,
-          add_item_distributor_options,
-          props.distributor_set
-        );
-      },
-      filter_manufacturer_select(val, update, abort) {
-        return filterFn(
-          val,
-          update,
-          abort,
-          add_item_manufacutrer_options,
-          props.manufacturer_set
-        );
-      },
-      filter_storage_location_select(val, update, abort) {
-        return filterFn(
-          val,
-          update,
-          abort,
-          add_storage_location_options,
-          props.storage_location_set
-        );
-      },
       filter_category_select(val, update, abort) {
         return filterFn(
           val,
@@ -679,39 +584,20 @@ export default defineComponent({
           props.inventory_flat_category_set
         );
       },
-      filter_invoice_item_select(val, update, abort) {
-        update(() => {
-          if (val === "") {
-            if (add_item_distributor.value) {
-              add_item_invoice_options.value = props.invoice_items_set.filter(
-                (v) => v.distributor_id == add_item_distributor.value.id
-              );
-            } else {
-              add_item_invoice_options.value = props.invoice_items_set;
-            }
-          } else {
-            const needle = val.toLowerCase();
-            if (add_item_distributor.value) {
-              add_item_invoice_options.value = props.invoice_items_set.filter(
-                (v) =>
-                  v.label.toLowerCase().indexOf(needle) > -1 &&
-                  v.distributor_id == add_item_distributor.value.id
-              );
-            } else {
-              add_item_invoice_options.value = props.invoice_items_set.filter(
-                (v) => v.label.toLowerCase().indexOf(needle) > -1
-              );
-            }
-          }
-        });
-      },
     };
+  },
+  components: {
+    ManufacturerSelect,
+    DistributorSelect,
+    InvoiceItemSelectWidget,
+    StorageLocationSelect,
   },
   created() {
     this.$watch(
       () => this.$props.item_initial_data,
       (toParams, previousParams) => {
-        this.set_initial_data(toParams);
+        this.load_initial_data(toParams.id);
+        // this.set_initial_data(toParams);
       }
     );
   },

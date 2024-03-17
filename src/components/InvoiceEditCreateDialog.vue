@@ -68,7 +68,7 @@
 <script>
 import { ref, defineComponent } from "vue";
 import { api } from "boot/axios";
-import DistributorSelect from "./DistributorSelect.vue";
+import DistributorSelect from "./widgets/DistributorSelect.vue";
 
 export default defineComponent({
   name: "InvoiceEditCreateDialog",

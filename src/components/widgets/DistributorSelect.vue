@@ -8,8 +8,6 @@
     use-input
     fill-input
     hide-selected
-    clearable
-    dense
     filled
   />
 </template>
@@ -17,16 +15,20 @@
 <script>
 import { ref, onMounted, defineComponent } from "vue";
 import { api } from "boot/axios";
-import { get_distributor_set } from "src/boot/distributor_set";
 
 export default defineComponent({
+  name: "DistributorSelect",
   setup() {
     const distributor = ref();
-    const all_distributor_set = ref();
+    const all_distributor_set = ref([]);
     const distributor_options = ref();
 
     function load_distributors() {
-      all_distributor_set.value = get_distributor_set().value;
+      if (all_distributor_set.value.length == 0) {
+        api.get("/api/distributor/").then((response) => {
+          all_distributor_set.value = response.data;
+        });
+      }
     }
 
     onMounted(() => {
