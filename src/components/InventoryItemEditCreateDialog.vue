@@ -15,7 +15,10 @@
       />
       <q-card-section style="max-height: 60vh" class="scroll">
         <div class="row">
-          <ManufacturerSelect v-model="add_item_manufacturer">
+          <ManufacturerSelect
+            v-model="add_item_manufacturer"
+            :disable="add_item_parts_selected.length == 1"
+          >
           </ManufacturerSelect>
           <br />
           <q-input
@@ -23,66 +26,26 @@
             filled
             v-model="add_item_name"
             label="Name / Manufacturer Order Number"
+            :disable="add_item_parts_selected.length == 1"
           /><br />
         </div>
         <br />
         <q-input
           label="Description"
           v-model="add_item_description"
+          :disable="add_item_parts_selected.length == 1"
           dense
           filled
         />
         <br />
-        <q-table
-          ref="table_ref"
-          v-model:pagination="add_item_parts_pagination"
-          v-model:selected="add_item_parts_selected"
-          :rows="add_item_parts"
-          :columns="[
-            {
-              name: 'manufacturer',
-              label: 'Manufacturer',
-              align: 'left',
-              field: 'manufacturer',
-            },
-            {
-              name: 'mon',
-              label: 'Manufacturer Order Number',
-              align: 'left',
-              field: 'manufacturer_order_number',
-            },
-            {
-              name: 'mpn',
-              label: 'Manufacturer Part Number',
-              align: 'left',
-              field: 'manufacturer_part_number',
-            },
-            {
-              name: 'description',
-              label: 'Description',
-              align: 'left',
-              field: 'part_description',
-            },
-            {
-              name: 'package',
-              label: 'Package',
-              align: 'left',
-              field: 'part_package',
-            },
-            {
-              name: 'packaging',
-              label: 'Packaging',
-              align: 'left',
-              field: 'packaging_type',
-            },
-          ]"
-          :loading="add_item_parts_loading"
-          :filter="add_item_name"
-          selection="single"
-          row-key="id"
-          @request="onPartRequest"
-          autogrow
-        ></q-table>
+        <PartSelectTable
+          v-model="table_model"
+          title=""
+          :manufacturer="add_item_manufacturer"
+          :part_number="add_item_name"
+          :onSelectChange="table_select_changed"
+          :initial_part_id="initial_part_id"
+        ></PartSelectTable>
       </q-card-section>
 
       <q-card-section>
@@ -227,6 +190,7 @@ import ManufacturerSelect from "./widgets/ManufacturerSelect.vue";
 import DistributorSelect from "./widgets/DistributorSelect.vue";
 import InvoiceItemSelectWidget from "./widgets/InvoiceItemSelectWidget.vue";
 import StorageLocationSelect from "./widgets/StorageLocationSelectWidget.vue";
+import PartSelectTable from "./widgets/PartSelectTable.vue";
 
 const add_item_quantity_unit_options = [
   { name: "unknown", id: null },
@@ -261,10 +225,6 @@ export default defineComponent({
       type: Array,
       required: true,
     },
-    storage_location_set: {
-      type: Array,
-      required: true,
-    },
     item_initial_data: {
       type: Object,
     },
@@ -273,14 +233,9 @@ export default defineComponent({
     },
   },
   setup(props) {
+    const table_model = ref();
     const table_ref = ref();
-    const add_item_parts = ref([]);
-    const add_item_parts_loading = ref(false);
-    const add_item_parts_pagination = ref({
-      page: 1,
-      rowsPerPage: 5,
-      rowsNumber: 10,
-    });
+    const initial_part_id = ref();
     const add_item_barcode = ref();
     const add_item_manufacturer = ref();
     const add_item_name = ref();
@@ -308,6 +263,11 @@ export default defineComponent({
     const initial = ref({ manufacturer_id: null, invoice_id: null });
     const initial_invoice_id = ref();
     const initial_distributor_id = ref();
+
+    function table_select_changed(v) {
+      console.log("Selecting", v);
+      add_item_parts_selected.value = v;
+    }
 
     function add_item() {
       if (!validate_inputs()) {
@@ -348,20 +308,32 @@ export default defineComponent({
     }
 
     function widgets_to_data() {
+      var manufacturer_id = null;
+      var part_name = null;
+      var description = null;
       var mon = null;
       if (add_item_parts_selected.value.length === 1) {
+        // part is selected, use data from part
+        manufacturer_id = add_item_parts_selected.value[0].part.manufacturer.id;
+        part_name = add_item_parts_selected.value[0].manufacturer_order_number;
         mon = add_item_parts_selected.value[0].id;
+        description = add_item_parts_selected.value[0].part.description;
+      } else {
+        manufacturer_id = add_item_manufacturer.value.id;
+        part_name = add_item_name.value;
+        description = add_item_description.value;
       }
       var invoice_id = null;
       console.log("Invoice", add_item_invoice.value);
       if (add_item_invoice.value) {
         invoice_id = add_item_invoice.value.id;
       }
+
       const data = {
-        name: add_item_name.value,
-        description: add_item_description.value,
+        name: part_name,
+        description: description,
         note: add_item_note.value,
-        manufacturer: add_item_manufacturer.value.id,
+        manufacturer: manufacturer_id,
         part: mon,
         storage_location: add_item_storage_location.value.id,
         invoice: invoice_id,
@@ -404,6 +376,7 @@ export default defineComponent({
       add_item_manufacturer.value = null;
       add_item_name.value = null;
       add_item_description.value = null;
+      add_item_parts_selected.value = [];
       add_item_note.value = null;
       add_item_quantity.value = null;
       add_item_quantity_unit.value = null;
@@ -445,20 +418,12 @@ export default defineComponent({
       }
 
       if (initial_data.invoice && initial_data.invoice.id) {
-        // add_item_invoice.value = initial_data.invoice;
         initial_invoice_id.value = initial_data.invoice.id;
         add_item_distributor.value = initial_data.invoice.invoice.distributor;
       } else {
         initial_invoice_id.value = null;
       }
-      onPartRequest({
-        pagination: add_item_parts_pagination.value,
-        filter: initial_data.part,
-      });
-      add_item_parts_selected.value = add_item_parts.value.filter(
-        (value) => value.id == initial_data.part.mon_id
-      );
-      //table_ref.value.scrollTo(part.mon_id)
+      initial_part_id.value = initial_data.part;
     }
 
     function add_item_barcode_search() {
@@ -499,32 +464,6 @@ export default defineComponent({
       });
     }
 
-    function onPartRequest(props) {
-      const { page, rowsPerPage } = props.pagination;
-      const filter = props.filter;
-      add_item_parts_loading.value = true;
-      var params = {
-        searchText: filter,
-        pageSize: rowsPerPage,
-        pageNumber: page,
-      };
-
-      if (add_item_manufacturer.value) {
-        params["manufacturer"] = add_item_manufacturer.value.pk;
-      }
-      api
-        .get(`/parts/api/get_part_list`, { params: params })
-        .then((response) => {
-          add_item_parts_pagination.value.page = page;
-          add_item_parts_pagination.value.rowsPerPage = rowsPerPage;
-          add_item_parts_pagination.value.rowsNumber = response.data.total;
-          add_item_parts.value = response.data.rows;
-        })
-        .finally(() => {
-          add_item_parts_loading.value = false;
-        });
-    }
-
     function load_initial_data(id) {
       // load_invoice_items();
       clear_form();
@@ -536,6 +475,9 @@ export default defineComponent({
     }
 
     return {
+      table_model,
+      table_select_changed,
+      initial_part_id,
       initial,
       table_ref,
       add_item_quantity_unit_options,
@@ -545,9 +487,6 @@ export default defineComponent({
       add_item_quantity_unit_ref,
       add_item_inventory_status,
       add_item_inventory_status_ref,
-      add_item_parts,
-      add_item_parts_loading,
-      add_item_parts_pagination,
       add_item_parts_selected,
       add_item_description,
       add_item_note,
@@ -571,7 +510,6 @@ export default defineComponent({
       update_item,
       set_initial_data,
       load_initial_data,
-      onPartRequest,
       initial_invoice_id,
       initial_distributor_id,
 
@@ -591,6 +529,7 @@ export default defineComponent({
     DistributorSelect,
     InvoiceItemSelectWidget,
     StorageLocationSelect,
+    PartSelectTable,
   },
   created() {
     this.$watch(

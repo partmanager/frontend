@@ -1,6 +1,5 @@
 <template>
   <q-table
-    ref="table_ref"
     v-model:pagination="add_item_parts_pagination"
     v-model:selected="add_item_parts_selected"
     :rows="add_item_parts"
@@ -47,7 +46,7 @@
     selection="single"
     row-key="id"
     @request="onPartRequest"
-    @update:selected="emitValtest"
+    @update:selected="on_selection_changed"
     autogrow
   ></q-table>
 </template>
@@ -59,10 +58,6 @@ import { api } from "boot/axios";
 export default defineComponent({
   name: "PartSelectTable",
   props: {
-    selected: {
-      type: Array,
-      required: true,
-    },
     title: {
       type: String,
       required: true,
@@ -73,8 +68,8 @@ export default defineComponent({
     part_number: {
       type: String,
     },
-    onsave: {
-      type: Function,
+    initial_part_id: {
+      type: Number,
     },
     onSelectChange: {
       type: Function,
@@ -89,9 +84,9 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const table_ref = ref();
+    const use_initial_part_id = ref(true);
     const add_item_parts = ref([]);
-    const add_item_parts_selected = ref([]);
+    const add_item_parts_selected = ref();
     const add_item_parts_loading = ref(false);
     const add_item_name = ref("Mur");
     const add_item_parts_pagination = ref({
@@ -106,30 +101,56 @@ export default defineComponent({
       part_number: toRef(props, "part_number"),
     });
 
-    function onPartRequest(props) {
+    function on_selection_changed(selected) {
+      if (selected.length == 0 && use_initial_part_id.value === true) {
+        console.log("User deselected part, switching to part search mode");
+        use_initial_part_id.value = false;
+      }
+      props.onSelectChange(selected);
+    }
+
+    function onPartRequest(propsss) {
       add_item_parts_loading.value = true;
 
-      const { page, rowsPerPage } = props.pagination;
-      var params = {
-        search: table_filter.value.part_number,
-        pageSize: rowsPerPage,
-        pageNumber: page,
-      };
+      if (use_initial_part_id.value && props.initial_part_id) {
+        api
+          .get(`/api/part/mon/${props.initial_part_id}`, { params: params })
+          .then((response) => {
+            add_item_parts.value = [response.data];
 
-      if (table_filter.value.manufacturer) {
-        params["manufacturer"] = table_filter.value.manufacturer.id;
+            if (response.data.id == props.initial_part_id) {
+              add_item_parts_selected.value = [response.data];
+              emitValtest.value(add_item_parts_selected.value);
+            } else {
+              console.log("Error part id should be equal initial part id");
+            }
+          })
+          .finally(() => {
+            add_item_parts_loading.value = false;
+          });
+      } else {
+        const { page, rowsPerPage } = propsss.pagination;
+        var params = {
+          search: table_filter.value.part_number,
+          pageSize: rowsPerPage,
+          pageNumber: page,
+        };
+
+        if (table_filter.value.manufacturer) {
+          params["manufacturer"] = table_filter.value.manufacturer.id;
+        }
+        api
+          .get(`/api/part/mon/`, { params: params })
+          .then((response) => {
+            add_item_parts_pagination.value.page = page;
+            add_item_parts_pagination.value.rowsPerPage = rowsPerPage;
+            add_item_parts_pagination.value.rowsNumber = response.data.count;
+            add_item_parts.value = response.data.results;
+          })
+          .finally(() => {
+            add_item_parts_loading.value = false;
+          });
       }
-      api
-        .get(`/api/part/mon/`, { params: params })
-        .then((response) => {
-          add_item_parts_pagination.value.page = page;
-          add_item_parts_pagination.value.rowsPerPage = rowsPerPage;
-          add_item_parts_pagination.value.rowsNumber = response.data.count;
-          add_item_parts.value = response.data.results;
-        })
-        .finally(() => {
-          add_item_parts_loading.value = false;
-        });
     }
 
     onMounted(() => {
@@ -138,7 +159,6 @@ export default defineComponent({
     });
 
     return {
-      table_ref,
       table_filter,
 
       props,
@@ -151,6 +171,7 @@ export default defineComponent({
 
       onPartRequest,
       emitValtest,
+      on_selection_changed,
     };
   },
 });

@@ -171,6 +171,9 @@ const merchandise_type = [
 
 const bookkeping_type = [
   { label: "Track this item", value: "k" },
+  { label: "Track as materials", value: "m" },
+  { label: "Track as service", value: "s" },
+  { label: "Track as equipment", value: "e" },
   { label: "Private use, don't track", value: "p" },
 ];
 

@@ -287,8 +287,8 @@ export default {
         pageSize: rowsPerPage,
         pageNumber: page,
         type: [1],
-        bookkeeping: ["m"],
-        without_mon: !show_with_mon_model.value,
+        bookkeeping: ["m", "k"],
+        // without_mon: !show_with_mon_model.value,
       };
 
       if (show_shipping_checkbox_model.value) {

@@ -19,7 +19,10 @@ import { ref, defineComponent } from "vue";
 
 const all_bookkeping_type_set = [
   { label: "Track this item", value: "k" },
-  { label: "private use, don't track", value: "p" },
+  { label: "Track as materials", value: "m" },
+  { label: "Track as service", value: "s" },
+  { label: "Track as equipment", value: "e" },
+  { label: "Private use, don't track", value: "p" },
 ];
 
 export default defineComponent({

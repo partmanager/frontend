@@ -361,6 +361,7 @@ export default {
 
     function on_invoice_item_created() {
       invoice_item_create_dialog.value = false;
+      load_invoice_items();
     }
 
     function update_invoice_item(data) {

@@ -12,6 +12,7 @@
         method="post"
         enctype="multipart/form-data"
         class="q-gutter-md"
+        @submit="onSubmit"
       >
         <q-card-section style="max-height: 60vh" class="scroll">
           <q-file
@@ -20,6 +21,20 @@
             v-model="importer"
             label="Import data file"
           />
+          <br />
+          <q-linear-progress
+            size="25px"
+            :value="import_progress"
+            color="accent"
+          >
+            <div class="absolute-full flex flex-center">
+              <q-badge
+                color="white"
+                text-color="accent"
+                :label="progressLabel"
+              />
+            </div>
+          </q-linear-progress>
         </q-card-section>
 
         <q-separator />
@@ -36,16 +51,39 @@
 <script>
 import { ref, defineComponent } from "vue";
 import { backendURL } from "src/boot/backend";
+import { api } from "boot/axios";
 
 export default defineComponent({
   name: "ImportDialog",
   props: {},
   setup(props) {
     const importer = ref();
+    const import_progress = ref();
+    const progressLabel = ref();
+
+    function onSubmit(evt) {
+      evt.target.submit();
+      // api
+      //   .post("/import")
+      //   .then((res) => {
+      //     //Perform Success Action
+      //   })
+      //   .catch((error) => {
+      //     // error.response.status Check status code
+      //   })
+      //   .finally(() => {
+      //     //Perform action in always
+      //   });
+    }
 
     return {
       importer,
       backendURL,
+
+      import_progress,
+      progressLabel,
+
+      onSubmit,
     };
   },
 });
