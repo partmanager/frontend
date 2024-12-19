@@ -1,36 +1,12 @@
 <template>
   <q-layout view="hHh lpR fFf">
     <q-header elevated>
-      <q-toolbar>
-        <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-        />
-
-        <q-toolbar-title>
-          <q-avatar>
-            <img src="https://cdn.quasar.dev/logo-v2/svg/logo-mono-white.svg" />
-          </q-avatar>
-          Shelftracker
-        </q-toolbar-title>
-
-        <q-tabs align="left">
-          <q-route-tab to="/inventory" label="Inventory" />
-          <q-route-tab to="/parts" label="Parts" />
-          <q-route-tab to="/projects" label="Projects" />
-          <q-route-tab to="/invoices" label="Invoices" />
-          <q-route-tab to="/storage_location" label="Storage Locations" />
-          <q-route-tab to="/distributors" label="Distributors" exact />
-          <q-route-tab to="/manufacturers" label="Manufacturers" exact />
-          <q-route-tab to="/manufacturers" label="Tools" />
-        </q-tabs>
-        <div>Quasar v{{ $q.version }}</div>
-        <q-btn dense flat round icon="menu" @click="toggleRightDrawer" />
-      </q-toolbar>
+      <MainToolbar
+        @toggleLeftDrawer="toggleLeftDrawer"
+        @toggleRightDrawer="toggleRightDrawer"
+        @importDialog="import_dialog = true"
+        @exportDialog="export_dialog = true"
+      ></MainToolbar>
     </q-header>
 
     <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
@@ -74,6 +50,8 @@
     <q-page-container>
       <router-view />
     </q-page-container>
+    <ExportDialog v-model="export_dialog"> </ExportDialog>
+    <ImportDialog v-model="import_dialog"></ImportDialog>
   </q-layout>
 </template>
 
@@ -81,6 +59,9 @@
 import { defineComponent, ref } from "vue";
 import { api } from "boot/axios";
 import { onMounted, onUpdated } from "vue";
+import ExportDialog from "src/components/ExportDialog.vue";
+import ImportDialog from "src/components/ImportDialog.vue";
+import MainToolbar from "components/MainToolbar.vue";
 
 export default defineComponent({
   name: "MainListLayout",
@@ -92,7 +73,6 @@ export default defineComponent({
       type: String,
     },
   },
-
   setup(props) {
     const leftDrawerOpen = ref(false);
     const rightDrawerOpen = ref(false);
@@ -101,6 +81,8 @@ export default defineComponent({
     const filterRef = ref(null);
     const simple = ref([]);
     const active = ref();
+    const export_dialog = ref(false);
+    const import_dialog = ref(false);
 
     function load() {
       api.get(props.api_url).then((response) => {
@@ -121,6 +103,9 @@ export default defineComponent({
     });
 
     return {
+      export_dialog,
+      import_dialog,
+
       leftDrawerOpen,
       toggleLeftDrawer() {
         leftDrawerOpen.value = !leftDrawerOpen.value;
@@ -143,7 +128,9 @@ export default defineComponent({
         filter.value = "";
         filterRef.value.focus();
       },
+      props,
     };
   },
+  components: { MainToolbar, ExportDialog, ImportDialog },
 });
 </script>
