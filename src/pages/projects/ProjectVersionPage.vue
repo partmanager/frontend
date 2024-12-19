@@ -24,6 +24,12 @@
           @click="assembly_create_dialog = true"
         />
         <q-btn
+          color="secondary"
+          label="Create BOM"
+          title="Create BOM"
+          @click="bom_create_dialog = true"
+        />
+        <q-btn
           color="red"
           label="Delete"
           title="Delete -> TODO <-"
@@ -41,104 +47,27 @@
       align="justify"
       narrow-indicator
     >
-      <q-tab name="boms" label="BOMs" />
+      <q-tab name="bom" label="BOM" />
+      <q-tab name="assemblies_jobs" label="Assemblies Jobs" />
       <q-tab name="assemblies" label="Assemblies" />
     </q-tabs>
 
     <q-tab-panels v-model="bom_assembliees_tab" animated>
-      <q-tab-panel name="boms">
-        <q-table
-          title="Bill of material"
-          :columns="[
-            { name: 'name', label: 'Name', field: 'name' },
-            { name: 'action', label: 'Action', align: 'left', field: 'id' },
-            { name: 'quantity', label: 'Quantity', field: 'multiply' },
-            { name: 'description', label: 'Description', field: 'description' },
-            { name: 'note', label: 'Note', field: 'note' },
-          ]"
-          :rows="boms"
-          :wrap-cells="true"
-        >
-          <template v-slot:top>
-            <div class="q-pa-md q-gutter-sm">
-              <div class="q-table__title">Bill of material</div>
-              <q-btn
-                color="primary"
-                label="Add"
-                title="Add BOM"
-                @click="bom_create_dialog = true"
-              />
-              <q-btn
-                color="primary"
-                label="Import"
-                title="Import BOM"
-                @click="bom_import_dialog = true"
-              />
-              <q-btn color="primary" label="Export" title="-> TODO <-" />
-            </div>
-            <q-space />
-            <q-input
-              borderless
-              dense
-              debounce="300"
-              v-model="bom_filter_text"
-              placeholder="Search"
-            >
-              <template v-slot:append>
-                <q-icon name="search" />
-              </template>
-            </q-input>
-          </template>
-
-          <template v-slot:body-cell-name="props">
-            <q-td :props="props">
-              <div>
-                <a :href="'#/bom/' + props.row.id"> {{ props.value }}</a>
-                <q-badge
-                  v-if="!props.part && !props.manufacturer_order_number"
-                  color="red"
-                  title="Part unassigned."
-                >
-                  <q-icon name="warning" color="white" class="q-ml-xs" />
-                </q-badge>
-              </div>
-            </q-td>
-          </template>
-
-          <template v-slot:body-cell-action="props">
-            <q-td :props="props">
-              <div>
-                <q-btn
-                  padding="xs"
-                  color="primary"
-                  icon="edit"
-                  title="Edit"
-                  @click="show_bom_item_edit_dialog(props.row)"
-                />
-                <q-btn
-                  padding="xs"
-                  color="red"
-                  icon="delete"
-                  title="Delete"
-                  @click="show_delete_confirmation_dialog(props.row)"
-                />
-              </div>
-            </q-td>
-          </template>
-        </q-table>
+      <q-tab-panel name="bom">
+        <BOMItemsTable :bom_id="bom_id"></BOMItemsTable>
       </q-tab-panel>
-      <q-tab-panel name="assemblies">
+      <q-tab-panel name="assemblies_jobs">
         <q-table
-          title="Assemblies"
+          title="Assemblies Jobs"
           :columns="[
-            { name: 'date', label: 'Date', field: 'date' },
+            { name: 'date', label: 'Date', field: 'creation_date' },
             { name: 'name', label: 'Name', field: 'name' },
+            { name: 'status', label: 'Status', field: 'status' },
             { name: 'action', label: 'Action', align: 'left', field: 'id' },
             { name: 'quantity', label: 'Quantity', field: 'quantity' },
             { name: 'price', label: 'Price', field: 'price' },
             { name: 'unit_price', label: 'Price per device', field: 'price' },
             { name: 'description', label: 'Description', field: 'description' },
-            { name: 'note', label: 'Note', field: 'note' },
           ]"
           :rows="assembly_set"
           :wrap-cells="true"
@@ -146,7 +75,9 @@
           <template v-slot:body-cell-name="props">
             <q-td :props="props">
               <div>
-                <a :href="'#/assembly/' + props.row.id"> {{ props.value }}</a>
+                <a :href="'#/assembly-job/' + props.row.id">
+                  {{ props.value }}</a
+                >
                 <q-badge
                   v-if="!props.part && !props.manufacturer_order_number"
                   color="red"
@@ -179,6 +110,9 @@
           </template>
         </q-table>
       </q-tab-panel>
+      <q-tab-panel name="assemblies">
+        <AssembliesTable></AssembliesTable>
+      </q-tab-panel>
     </q-tab-panels>
 
     <BOMEditCreateDialog
@@ -206,7 +140,7 @@
     <AssemblyEditCreateDialog
       v-model="assembly_create_dialog"
       title="Create Assembly"
-      :project_id="project_version_id"
+      :project_version_id="project_version_id"
       :onsave="on_assembly_save"
     ></AssemblyEditCreateDialog>
 
@@ -244,8 +178,10 @@ import { useRoute } from "vue-router";
 import { api } from "boot/axios";
 import BOMEditCreateDialog from "src/components/BOMEditCreateDialog.vue";
 import BOMImportDialog from "src/components/BOMImportDialog.vue";
+import BOMItemsTable from "components/BOMItemsTable.vue";
 import AssemblyEditCreateDialog from "components/AssemblyEditCreateDialog.vue";
 import DeleteConfirmationDialog from "components/DeleteConfirmationDialog.vue";
+import AssembliesTable from "components/AssembliesTable.vue";
 
 export default {
   setup() {
@@ -261,20 +197,25 @@ export default {
     const assembly_create_dialog = ref();
     const assembly_delete_dialog = ref();
 
-    const bom_assembliees_tab = ref("boms");
+    const bom_assembliees_tab = ref("bom");
 
     const project_name = ref();
     const project_version_name = ref();
     const boms = ref([]);
     const active_bom = ref({ id: null, name: null });
     const active_assembly = ref({ id: null, name: null });
+    const bom_id = ref(null);
 
     function load_project_details() {
       api.get(`/api/project-version/${project_version_id}`).then((response) => {
         project_name.value = response.data.project.name;
         project_version_name.value = response.data.name;
-        assembly_set.value = response.data.assembly_set;
         boms.value = response.data.bom_set;
+        bom_id.value = Number(boms.value[0].id);
+      });
+
+      api.get(`/api/assembly-job/`).then((response) => {
+        assembly_set.value = response.data;
       });
     }
 
@@ -319,7 +260,7 @@ export default {
 
     function onAssemblyDelete() {
       api
-        .delete(`api/assembly/${active_assembly.value.id}`)
+        .delete(`api/assembly-job/${active_assembly.value.id}`)
         .then((response) => {
           load_project_details();
           assembly_delete_dialog.value = false;
@@ -334,6 +275,8 @@ export default {
       bom_create_dialog,
       bom_import_dialog,
       bom_filter_text,
+
+      bom_id,
 
       bom_edit_dialog,
       show_bom_item_edit_dialog,
@@ -363,8 +306,10 @@ export default {
     };
   },
   components: {
+    AssembliesTable,
     BOMEditCreateDialog,
     BOMImportDialog,
+    BOMItemsTable,
     AssemblyEditCreateDialog,
     DeleteConfirmationDialog,
   },

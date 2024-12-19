@@ -2,13 +2,16 @@
   <div class="q-pa-md">
     <q-card align="justify">
       <q-card-section>
-        <div class="text-h6">{{ assembly.name }} -> {{ project.name }}</div>
+        <div class="text-h6">
+          {{ project.name }} -> {{ project_version.name }} ->
+          {{ assembly.name }}
+        </div>
       </q-card-section>
 
       <q-separator />
 
       <q-card-section>
-        Project version: {{ project.version }}<br />
+        Project version: {{ project_version.name }}<br />
         Description: {{ assembly.description }} <br />
         <strong>Quantity: {{ assembly.quantity }}</strong
         ><br />
@@ -45,6 +48,12 @@
           label="Delete"
           title="Delete Assembly"
           @click="assembly_delete_dialog = true"
+        />
+        <q-btn
+          color="secondary"
+          label="Generate Assemblies"
+          title="Generate Assembly"
+          @click="generate_assemblies"
         />
       </q-card-actions>
     </q-card>
@@ -372,7 +381,8 @@ export default {
     const assembly_edit_dialog = ref();
     const assembly_delete_dialog = ref();
 
-    const project = ref({ id: null, name: null, version: null });
+    const project = ref({ id: null, name: null });
+    const project_version = ref({ id: null, name: null });
     const assembly = ref({
       id: active_id,
       name: null,
@@ -384,16 +394,15 @@ export default {
     const items = ref([]);
 
     function load_assembly_details() {
-      api.get(`/api/assembly/${active_id}`).then((response) => {
-        project.value.id = response.data.project;
-        project.value.name = response.data.project_name;
-        project.value.version = response.data.project_version;
+      api.get(`/api/assembly-job/${active_id}`).then((response) => {
+        project.value = response.data.project_version.project;
+        project_version.value = response.data.project_version;
         assembly.value.name = response.data.name;
         assembly.value.description = response.data.description;
         assembly.value.quantity = response.data.quantity;
         assembly.value.price = 0;
 
-        items.value = response.data.assembly_item_set;
+        // items.value = response.data.assembly_item_set;
 
         for (let index = 0; index < items.value.length; ++index) {
           items.value[index].reserved_qty = 0;
@@ -442,12 +451,18 @@ export default {
       });
     }
 
+    function generate_assemblies() {
+      api
+        .post(`/api/assembly-job-generate/${active_id}/`)
+        .then((response) => {});
+    }
+
     function on_assembly_save() {
       assembly_edit_dialog.value = false;
     }
 
     function on_assembly_delete() {
-      api.delete(`/api/assembly/${active_id}`).then((response) => {
+      api.delete(`/api/assembly-job/${active_id}`).then((response) => {
         assembly_delete_dialog.value = false;
       });
     }
@@ -489,9 +504,12 @@ export default {
 
       reserve_inventory_item_edit_dialog,
 
+      generate_assemblies,
+
       project,
       assembly,
       active_id,
+      project_version,
 
       items,
 

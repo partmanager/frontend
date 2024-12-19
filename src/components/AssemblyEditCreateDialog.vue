@@ -21,6 +21,12 @@
           hint="Description"
         />
         <q-input
+          v-model="assembly.contractor"
+          filled
+          label="Assembly contractor"
+          hint="Assembly contractor"
+        />
+        <q-input
           v-model="assembly.quantity"
           filled
           type="number"
@@ -46,6 +52,7 @@
 <script>
 import { ref, defineComponent } from "vue";
 import { api } from "boot/axios";
+import { useQuasar } from "quasar";
 
 export default defineComponent({
   name: "AssemblyEditCreateDialog",
@@ -57,7 +64,7 @@ export default defineComponent({
     assembly_initial_id: {
       type: Number,
     },
-    project_id: {
+    project_version_id: {
       type: Number,
     },
     onsave: {
@@ -65,9 +72,11 @@ export default defineComponent({
     },
   },
   setup(props) {
+    const $q = useQuasar();
     const assembly = ref({
       name: null,
       description: null,
+      contractor: null,
       quantity: null,
     });
 
@@ -75,19 +84,25 @@ export default defineComponent({
       const data = {
         name: assembly.value.name,
         quantity: assembly.value.quantity,
+        contractor: assembly.value.contractor,
         description: assembly.value.description,
-        project: props.project_id,
+        project_version: props.project_version_id,
       };
       if (props.assembly_initial_id) {
         api
-          .put(`/api/assembly/${props.assembly_initial_id}/`, data)
+          .put(`/api/assembly-job/${props.assembly_initial_id}/`, data)
           .finally(() => {
             props.onsave();
           });
       } else {
         api
-          .post(`/api/assembly/`, data)
-          .then((response) => {})
+          .post(`/api/assembly-job/`, data)
+          .then((response) => {
+            $q.notify({
+              color: "positive",
+              message: `Assembly Job ${response.data.name} created`,
+            });
+          })
           .finally(() => {
             props.onsave();
           });
@@ -97,7 +112,7 @@ export default defineComponent({
     function assembly_edit_load_data() {
       if (props.assembly_initial_id) {
         api
-          .get(`/api/assembly/${props.assembly_initial_id}/`)
+          .get(`/api/assembly-job/${props.assembly_initial_id}/`)
           .then((response) => {
             assembly.value.name = response.data.name;
             assembly.value.description = response.data.description;

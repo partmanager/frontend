@@ -34,6 +34,7 @@
           v-model:selected="selected_part"
           :manufacturer="filters.manufacturer"
           :part_number="filters.part_number"
+          :onSelectChange="() => {}"
         ></PartSelectTable>
 
         <br />
@@ -100,6 +101,7 @@
 <script>
 import { ref, onMounted, defineComponent } from "vue";
 import { api } from "boot/axios";
+import { useQuasar } from "quasar";
 import PartSelectTable from "./widgets/PartSelectTable.vue";
 import ManufacturerSelect from "./widgets/ManufacturerSelect.vue";
 
@@ -117,11 +119,10 @@ export default defineComponent({
     bom_id: {
       type: Number,
     },
-    onsave: {
-      type: Function,
-    },
   },
-  setup(props) {
+  emits: ["onCreated", "onUpdated"],
+  setup(props, ctx) {
+    const $q = useQuasar();
     const filters = ref({ manufacturer: null, part_number: "" });
     const part_select_table = ref();
     const bom_group_select = ref();
@@ -161,9 +162,20 @@ export default defineComponent({
         data.bom = props.bom_id;
         api
           .post("/api/bom-item/", data)
-          .then((response) => {})
-          .finally(() => {
-            props.onsave();
+          .then((response) => {
+            $q.notify({
+              color: "positive",
+              message: `Created BOM Item ${response.data.name}`,
+            });
+            ctx.emit("onCreated");
+          })
+          .catch(() => {
+            $q.notify({
+              color: "negative",
+              position: "top",
+              message: "Unable to create BOM Item",
+              icon: "report_problem",
+            });
           });
       }
     }
@@ -171,12 +183,9 @@ export default defineComponent({
     function validate_and_update(bom_item_id) {
       if (validate_fields()) {
         const data = fields_to_api_data();
-        api
-          .put(`/api/bom-item/${bom_item_id}/`, data)
-          .then((response) => {})
-          .finally(() => {
-            props.onsave();
-          });
+        api.put(`/api/bom-item/${bom_item_id}/`, data).then((response) => {
+          ctx.emit("onUpdated");
+        });
       }
     }
 

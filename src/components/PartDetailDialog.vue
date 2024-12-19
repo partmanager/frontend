@@ -171,15 +171,27 @@
         </q-tab-panel>
 
         <q-tab-panel name="symbol_footprint">
-          <q-img
+          <q-carousel
             v-if="part_details.symbol"
             class="col col-md-6"
-            :src="part_details.symbol.interactive_svg"
-            spinner-color="white"
-            :ratio="1"
-            loading="lazy"
-            :fit="scale - down"
-          />
+            animated
+            v-model="symbol_slide"
+            arrows
+            navigation
+          >
+            <q-carousel-slide
+              v-for="(picture, i) in part_details.symbol.svg_files"
+              :key="i"
+              :name="i + 1"
+              :img-src="
+                media_url +
+                part_details.manufacturer.name.replace(/ /, '_').toLowerCase() +
+                '_' +
+                part_details.manufacturer_part_number.replace(/#/, '') +
+                picture
+              "
+            />
+          </q-carousel>
         </q-tab-panel>
 
         <q-tab-panel name="files">
@@ -266,6 +278,8 @@ export default defineComponent({
       files: [],
     });
     const loading = ref(false);
+    const media_url = backendURL + "/media/symbols/svg/";
+    const symbol_slide = ref(1);
 
     function onDetailDataRequest() {
       if (props.id >= 0) {
@@ -286,6 +300,8 @@ export default defineComponent({
       tab,
       part_details,
       onDetailDataRequest,
+      media_url,
+      symbol_slide,
     };
   },
   components: { PartDistributorsStockData, PartPackaging },

@@ -94,22 +94,14 @@ const routes = [
   },
   {
     path: "/projects",
-    props: {
-      api_url: "/projects/api/get_projects_menu",
-      router_url: "/project-version/",
-    },
-    component: () => import("layouts/MainLayout.vue"),
+    component: () => import("layouts/DefaultLayout.vue"),
     children: [
       { path: "", component: () => import("pages/projects/ProjectsPage.vue") },
     ],
   },
   {
     path: "/project/:id",
-    props: {
-      api_url: "/projects/api/get_projects_menu",
-      router_url: "/project-version/",
-    },
-    component: () => import("layouts/MainLayout.vue"),
+    component: () => import("layouts/DefaultLayout.vue"),
     children: [
       { path: "", component: () => import("pages/projects/ProjectPage.vue") },
     ],
@@ -140,13 +132,18 @@ const routes = [
     ],
   },
   {
-    path: "/assembly/:id",
+    path: "/assembly-job/:id",
     props: {
       api_url: "/projects/api/get_projects_menu",
       router_url: "/project/",
     },
     component: () => import("layouts/MainLayout.vue"),
-    children: [{ path: "", component: () => import("pages/AssemblyPage.vue") }],
+    children: [
+      {
+        path: "",
+        component: () => import("pages/projects/AssemblyJobPage.vue"),
+      },
+    ],
   },
   {
     path: "/parts",
@@ -176,6 +173,16 @@ const routes = [
     component: () => import("layouts/MainLayout.vue"),
     children: [
       { path: "", component: () => import("pages/PartsCADLibrary.vue") },
+    ],
+  },
+  {
+    path: "/assembly/:id",
+    component: () => import("layouts/DefaultLayout.vue"),
+    children: [
+      {
+        path: "",
+        component: () => import("pages/projects/AssemblyDetailPage.vue"),
+      },
     ],
   },
 

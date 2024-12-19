@@ -1,5 +1,45 @@
 <template>
   <div class="q-pa-md">
+    <q-card class="q-mb-md" bordered>
+      <q-card-section>
+        <div class="text-h6">{{ project_name }}</div>
+        Created: {{ project_creation_date }}
+      </q-card-section>
+      <q-card-section> Description: {{ project_description }} </q-card-section>
+      <q-card-actions>
+        <q-btn
+          color="primary"
+          label="Create project version"
+          title="Create project version"
+          @click="project_version_create_dialog = true"
+        />
+        <q-btn
+          color="primary"
+          label="Import"
+          disable
+          @click="projects_import_dialog = true"
+        />
+        <q-btn color="primary" label="Export" disable />
+
+        <q-space />
+
+        <q-btn
+          color="grey"
+          round
+          flat
+          dense
+          :icon="expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
+          @click="expanded = !expanded"
+        />
+      </q-card-actions>
+      <q-slide-transition>
+        <div v-show="expanded">
+          <q-separator />
+          <q-card-section> TODO add filters </q-card-section>
+        </div>
+      </q-slide-transition>
+    </q-card>
+
     <q-table
       :title="project_name"
       :columns="columns"
@@ -7,15 +47,6 @@
       :wrap-cells="true"
     >
       <template v-slot:top>
-        <div class="q-pa-md q-gutter-sm">
-          <div class="q-table__title">{{ project_name }}</div>
-          <q-btn
-            color="primary"
-            label="Create project version"
-            title="Create project version"
-            @click="project_version_create_dialog = true"
-          />
-        </div>
         <q-space />
         <q-input
           borderless
@@ -61,37 +92,11 @@
         </q-td> </template
     ></q-table>
 
-    <q-dialog v-model="project_version_create_dialog">
-      <q-card>
-        <q-card-section>
-          <div class="text-h6">Create Project Version</div>
-        </q-card-section>
-
-        <q-separator />
-
-        <q-card-section class="q-pt-none">
-          <q-input
-            dense
-            v-model="new_project_version_name"
-            autofocus
-            @keyup.enter="prompt = false"
-            label="Project version name"
-            hint="New project version name"
-          />
-        </q-card-section>
-
-        <q-card-actions align="right" class="bg-white text-teal">
-          <q-btn flat label="Cancel" v-close-popup />
-          <q-btn
-            flat
-            label="Save"
-            color="primary"
-            type="submit"
-            @click="create_project_version_validate_and_submit()"
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <CreateProjectVersionDialog
+      v-model="project_version_create_dialog"
+      :project_id="project_id"
+      @onCreated="on_project_version_created"
+    ></CreateProjectVersionDialog>
 
     <DeleteConfirmationDialog
       v-model="project_delete_dialog"
@@ -112,29 +117,36 @@ import { ref, onMounted } from "vue";
 import { api } from "boot/axios";
 import { useRoute } from "vue-router";
 import DeleteConfirmationDialog from "components/DeleteConfirmationDialog.vue";
+import CreateProjectVersionDialog from "components/CreateProjectVersionDialog.vue";
 
 const columns = [
   { name: "name", label: "Project Version", field: "name" },
   { name: "action", label: "Action", field: "id" },
   { name: "boms_count", label: "BOMs", field: "boms" },
   { name: "assembly_count", label: "Assemblies", field: "assembly" },
-  { name: "creation", label: "Creation date", field: "creation" },
+  { name: "creation", label: "Creation date", field: "creation_date" },
 ];
 
 export default {
   setup() {
     const route = useRoute();
-    const active_id = route.params.id;
-    const rows = ref();
+    const project_id = Number(route.params.id);
     const project_name = ref();
-    const project_delete_dialog = ref();
+    const project_description = ref();
+    const project_creation_date = ref();
+    const expanded = ref();
+    const rows = ref([]);
+    const filter = ref();
     const active_item = ref();
+
+    const project_delete_dialog = ref();
     const project_version_create_dialog = ref();
-    const new_project_version_name = ref();
 
     function load_project() {
-      api.get(`/api/project/${active_id}`).then((response) => {
+      api.get(`/api/project/${project_id}`).then((response) => {
         project_name.value = response.data.name;
+        project_description.value = response.data.description;
+        project_creation_date.value = response.data.creation_date;
         rows.value = response.data.projectversion_set;
       });
     }
@@ -142,22 +154,6 @@ export default {
     function show_delete_confirmation_dialog(row) {
       active_item.value = row;
       project_delete_dialog.value = true;
-    }
-
-    function create_project_version_validate_and_submit() {
-      const data = {
-        project: active_id,
-        name: new_project_version_name.value,
-      };
-      api
-        .post("/api/project-version/", data)
-        .then((response) => {
-          load_project();
-          new_project_version_name.value = "";
-        })
-        .finally(() => {
-          project_version_create_dialog.value = false;
-        });
     }
 
     function on_project_version_delete() {
@@ -169,26 +165,39 @@ export default {
         });
     }
 
+    function on_project_version_created() {
+      project_version_create_dialog.value = false;
+      load_project();
+    }
+
     onMounted(() => {
       load_project();
     });
 
     return {
+      project_id,
+      project_name,
+      project_description,
+      project_creation_date,
+
+      expanded,
       columns,
       rows,
-      project_name,
+      filter,
+
       active_item,
+
       project_delete_dialog,
       show_delete_confirmation_dialog,
       on_project_version_delete,
 
       project_version_create_dialog,
-      new_project_version_name,
-      create_project_version_validate_and_submit,
+      on_project_version_created,
     };
   },
   components: {
     DeleteConfirmationDialog,
+    CreateProjectVersionDialog,
   },
 };
 </script>

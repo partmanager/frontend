@@ -78,7 +78,11 @@
             :src="backendURL + '/static/tape_embossed_dual_reel.svg'"
           >
           </q-img>
-          <q-table v-if="props.row.prices" hide-bottom :rows="props.packaging">
+          <q-table
+            v-if="props.row.packaging_packaging_data === 'Embossed Tape / Reel'"
+            hide-bottom
+            :rows="props.row.packaging_packaging_data.reel"
+          >
           </q-table>
         </q-td>
       </q-tr>
