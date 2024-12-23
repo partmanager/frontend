@@ -38,17 +38,6 @@
         ></PartSelectTable>
 
         <br />
-
-        <q-input
-          v-model="quantity"
-          filled
-          label="Quantity"
-          hint="Quantity"
-          type="number"
-          dense
-        />
-
-        <br />
         <q-select
           v-model="bom_group_select"
           option-label="display_name"
@@ -65,12 +54,16 @@
         />
 
         <br />
-        <q-input
-          v-model="designators"
-          type="textarea"
-          label="Designators"
-          hint="Designators as coma separated list"
+        <q-select
           filled
+          label="Designators"
+          hint="Separate multiple values by [,;|]"
+          v-model="designators"
+          use-input
+          use-chips
+          multiple
+          input-debounce="0"
+          @new-value="createDesignator"
         />
         <br />
         <q-input
@@ -134,6 +127,29 @@ export default defineComponent({
     const initial_manufacturer_name = ref();
     const filtered_bom_group_set = ref([]);
     const bom_group_set = ref([]);
+    const stringOptions = ref([]);
+
+    function createDesignator(val, done) {
+      if (val.length > 0) {
+        const modelValue = (designators.value || []).slice();
+
+        val
+          .split(/[,;|]+/)
+          .map((v) => v.trim())
+          .filter((v) => v.length > 0)
+          .forEach((v) => {
+            if (stringOptions.value.includes(v) === false) {
+              stringOptions.value.push(v);
+            }
+            if (modelValue.includes(v) === false) {
+              modelValue.push(v);
+            }
+          });
+
+        done(null);
+        designators.value = modelValue;
+      }
+    }
 
     function validate_and_submit() {
       if (props.bom_item_id) {
@@ -165,7 +181,7 @@ export default defineComponent({
           .then((response) => {
             $q.notify({
               color: "positive",
-              message: `Created BOM Item ${response.data.name}`,
+              message: `Created BOM Item ${response.data.designators}`,
             });
             ctx.emit("onCreated");
           })
@@ -275,6 +291,8 @@ export default defineComponent({
       load_initial_data,
       validate_and_submit,
       filter_bom_group_select,
+
+      createDesignator,
     };
   },
 });

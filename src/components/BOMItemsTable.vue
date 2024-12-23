@@ -117,7 +117,15 @@ import BOMItemEditCreateDialog from "components/BOMItemEditCreateDialog.vue";
 import DeleteConfirmationDialog from "components/DeleteConfirmationDialog.vue";
 
 const columns = [
-  { name: "qty", label: "Quantity", field: "quantity", sortable: true },
+  {
+    name: "qty",
+    label: "Quantity",
+    field: "designators",
+    sortable: true,
+    format: (val) => {
+      return val.length;
+    },
+  },
   { name: "action", label: "Action", align: "left", field: "id" },
   {
     name: "group",
@@ -175,6 +183,10 @@ const columns = [
     name: "designator",
     label: "Designator",
     field: "designators",
+    sortable: true,
+    format: (val) => {
+      return val.join(", ");
+    },
   },
   {
     name: "description",
@@ -247,12 +259,12 @@ export default {
       load_bom_items();
     });
 
-    watch(
-      () => props.bom_id,
-      (current, previous) => {
-        load_bom_items();
-      }
-    );
+    // watch(
+    //   () => props.bom_id,
+    //   (current, previous) => {
+    //     load_bom_items();
+    //   }
+    // );
 
     return {
       bom_item_create_dialog,

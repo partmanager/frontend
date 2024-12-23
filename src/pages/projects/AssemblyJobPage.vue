@@ -41,7 +41,7 @@
           color="secondary"
           label="Close Assembly"
           title="Close Assembly"
-          @click="assembly_edit_dialog = true"
+          @click="closeRework"
         />
         <q-btn
           color="secondary"
@@ -58,77 +58,7 @@
       </q-card-actions>
     </q-card>
     <br />
-    <q-table
-      title="Parts"
-      :columns="[
-        {
-          name: 'quantity',
-          label: 'Quantity',
-          field: 'quantity',
-          sortable: true,
-        },
-        {
-          name: 'reserved_qty',
-          label: 'Reserved Quantity',
-          field: 'reserved_qty',
-        },
-        {
-          name: 'price',
-          label: 'Parts price',
-          field: 'price',
-          sortable: true,
-        },
-        { name: 'action', label: 'Action', align: 'left', field: 'id' },
-        {
-          name: 'manufacturer',
-          label: 'Manufacturer',
-          field: 'part',
-          format: (val, row) => {
-            if (val) {
-              return val.manufacturer;
-            } else if (row.part_not_found_fallback) {
-              return row.part_not_found_fallback.manufacturer;
-            }
-          },
-        },
-        {
-          name: 'mpn',
-          label: 'MPN',
-          field: 'part',
-          format: (val, row) => {
-            if (val) {
-              return val.manufacturer_part_number;
-            } else if (row.part_not_found_fallback) {
-              return row.part_not_found_fallback.MPN;
-            }
-          },
-        },
-        {
-          name: 'mon',
-          label: 'MON',
-          field: 'manufacturer_order_number',
-          format: (val, row) => {
-            if (val) {
-              return val.manufacturer_order_number;
-            } else if (row.part_not_found_fallback) {
-              return row.part_not_found_fallback.MON;
-            }
-          },
-        },
-        {
-          name: 'desc',
-          label: 'Description',
-          field: 'part',
-          format: (val, row) => {
-            if (val) {
-              return val.description;
-            }
-          },
-        },
-      ]"
-      :rows="items"
-      :wrap-cells="true"
-    >
+    <q-table title="Parts" :columns="columns" :rows="items" :wrap-cells="true">
       <template v-slot:header="props">
         <q-tr :props="props">
           <q-th auto-width />
@@ -195,148 +125,72 @@
         <!-- Expandable detail row -->
         <q-tr v-show="props.expand" :props="props">
           <q-td colspan="100%">
+            <q-card
+              ><q-card-section>
+                <q-checkbox
+                  v-model="props.row.place"
+                  label="Assembly part"
+                ></q-checkbox>
+                <q-checkbox
+                  v-model="props.row.sourced_externally"
+                  label="Sourced externally by assembly house"
+                ></q-checkbox>
+                <q-btn
+                  label="Apply to all"
+                  color="primary"
+                  @click="update_assembly_items_data(props.row)"
+                ></q-btn>
+              </q-card-section>
+            </q-card>
             <!-- Part sources table -->
-            <q-table
-              title="Parts sources"
-              dense
-              :columns="[
-                {
-                  name: 'location_name',
-                  label: 'Name',
-                  field: 'name',
-                },
-                {
-                  name: 'available_qty',
-                  label: 'Available quantity',
-                  field: 'stock',
-                },
-                {
-                  name: 'reserved_quantity',
-                  label: 'Reserved Quantity',
-                  field: 'reservation',
-                  format: (val, row) => {
-                    if (val) {
-                      return val.quantity;
-                    }
-                  },
-                },
-                {
-                  name: 'condition',
-                  label: 'Condition',
-                  field: 'condition',
-                },
-                {
-                  name: 'status',
-                  label: 'Status',
-                  field: 'status',
-                },
-                {
-                  name: 'unit_price',
-                  label: 'Price',
-                  field: 'invoice',
-                  format: (val, row) => {
-                    if (val) {
-                      return val.unit_price + ' ' + val.price_currency;
-                    }
-                  },
-                },
-                {
-                  name: 'bom_name',
-                  label: 'Location',
-                  field: 'storage_location',
-                  format: (val, row) => {
-                    if (val) {
-                      return val.location;
-                    }
-                  },
-                },
-              ]"
-              :rows="props.row.inventory_positions"
-            >
-              <template v-slot:body-cell-reserved_quantity="props">
-                <q-td :props="props">
-                  {{ props.value }}
-                  <q-popup-edit
-                    v-model="props.row.reservation.quantity"
-                    buttons
-                    v-slot="scope"
-                    auto-save
-                    @save="
-                      (value, initialValue) => {
-                        reserve_inventory_item_edit_dialog(
-                          props.row,
-                          value,
-                          initialValue
-                        );
-                      }
-                    "
-                  >
-                    <q-input
-                      type="number"
-                      v-model.number="scope.value"
-                      dense
-                      autofocus
-                      @keyup.enter="scope.set"
-                    />
-                  </q-popup-edit>
-                </q-td>
-              </template>
-              <template v-slot:body-cell-bom_name="props">
-                <q-td :props="props">
-                  <div>
-                    <a :href="'#/bom/' + props.row.bom_id">
-                      {{ props.value }}</a
-                    >
-                  </div>
-                </q-td>
-              </template></q-table
-            >
+            <AlternativeLocationTable
+              v-if="!props.row.sourced_externally"
+              title="Part Locations"
+              :part_id="props.row.part.id"
+            ></AlternativeLocationTable>
+
             <br />
             <!-- Parts origins table-->
             <q-table
-              title="Parts origin"
-              dense
+              title="Parts to assembly"
               :columns="[
                 {
-                  name: 'totalQty',
-                  label: 'Project quantity',
-                  field: 'project_qty',
+                  name: 'designator',
+                  label: 'Designator',
+                  align: 'left',
+                  field: 'designator',
                 },
                 {
-                  name: 'bom_quantity',
-                  label: 'BOM Quantity',
-                  field: 'bom_qty',
+                  name: 'assembly',
+                  label: 'Assembly Name',
+                  align: 'left',
+                  field: 'assembly',
                 },
-                { name: 'bom_name', label: 'BOM', field: 'name' },
                 {
-                  name: 'bom_designators',
-                  label: 'Designators',
-                  field: 'designators',
+                  name: 'assembly_sn',
+                  label: 'Serial Number',
+                  align: 'left',
+                  field: 'assembly_sn',
+                },
+                {
+                  name: 'assembled',
+                  label: 'Assembly?',
+                  align: 'left',
+                  field: 'assembled',
+                },
+                {
+                  name: 'sourced_externally',
+                  label: 'Externally sourced?',
+                  align: 'left',
+                  field: 'sourced_externally',
                 },
               ]"
-              :rows="
-                Object.entries(props.row.item_origins).map(([id, values]) => ({
-                  id,
-                  ...values,
-                }))
-              "
-            >
-              <template v-slot:body-cell-bom_name="props">
-                <q-td :props="props">
-                  <div>
-                    <a :href="'#/bom/' + props.row.bom_id">
-                      {{ props.value }}</a
-                    >
-                  </div>
-                </q-td>
-              </template></q-table
-            >
+              :rows="props.row.assembly_items"
+            ></q-table>
+
             <br />
             <q-separator />
-            <div class="text-left">
-              Assembly item ID: {{ props.row.id }}, Part ID:
-              {{ props.row.part }}
-            </div>
+            <div class="text-left">Part ID: {{ props.row.part.id }}</div>
           </q-td>
         </q-tr>
       </template>
@@ -372,6 +226,77 @@ import { api } from "boot/axios";
 import AssemblyEditCreateDialog from "components/AssemblyEditCreateDialog.vue";
 import DeleteConfirmationDialog from "components/DeleteConfirmationDialog.vue";
 import { quantity_unit_id_to_name } from "boot/choices";
+import AlternativeLocationTable from "components/AlternativeLocationTable.vue";
+
+const columns = [
+  {
+    name: "quantity",
+    label: "Quantity",
+    field: "assembly_items",
+    sortable: true,
+    format: (val) => {
+      return val.length;
+    },
+  },
+  {
+    name: "reserved_qty",
+    label: "Reserved Quantity",
+    field: "reserved_qty",
+  },
+  {
+    name: "price",
+    label: "Parts price",
+    field: "price",
+    sortable: true,
+  },
+  { name: "action", label: "Action", align: "left", field: "id" },
+  {
+    name: "manufacturer",
+    label: "Manufacturer",
+    field: "part",
+    format: (val, row) => {
+      if (val) {
+        return val.manufacturer;
+      } else if (row.part_not_found_fallback) {
+        return row.part_not_found_fallback.manufacturer;
+      }
+    },
+  },
+  {
+    name: "mpn",
+    label: "MPN",
+    field: "part",
+    format: (val, row) => {
+      if (val) {
+        return val.manufacturer_part_number;
+      } else if (row.part_not_found_fallback) {
+        return row.part_not_found_fallback.MPN;
+      }
+    },
+  },
+  {
+    name: "mon",
+    label: "MON",
+    field: "manufacturer_order_number",
+    format: (val, row) => {
+      if (val) {
+        return val.manufacturer_order_number;
+      } else if (row.part_not_found_fallback) {
+        return row.part_not_found_fallback.MON;
+      }
+    },
+  },
+  {
+    name: "desc",
+    label: "Description",
+    field: "part",
+    format: (val, row) => {
+      if (val) {
+        return val.description;
+      }
+    },
+  },
+];
 
 export default {
   setup() {
@@ -393,6 +318,33 @@ export default {
 
     const items = ref([]);
 
+    function update_assembly_items_data(row) {
+      var data = {
+        assembled: row.place,
+        sourced_externally: row.sourced_externally,
+      };
+      for (let assembly_item of row.assembly_items) {
+        console.log(assembly_item);
+        api.patch(`/api/assembly-item/${assembly_item.id}/`, data);
+      }
+    }
+
+    function load_assembly_items() {
+      api
+        .get(`api/assembly-item/?assembly__assembly_job=${active_id}`)
+        .then((response) => {
+          // items.value = response.data;
+          var obj = Object.groupBy(response.data, (x) => x.part.id);
+
+          items.value = Object.keys(obj).map((key) => ({
+            id: Number(key),
+            part: obj[key][0].part,
+            assembly_items: obj[key],
+          }));
+          console.log(items.value);
+        });
+    }
+
     function load_assembly_details() {
       api.get(`/api/assembly-job/${active_id}`).then((response) => {
         project.value = response.data.project_version.project;
@@ -400,54 +352,8 @@ export default {
         assembly.value.name = response.data.name;
         assembly.value.description = response.data.description;
         assembly.value.quantity = response.data.quantity;
+        assembly.value.rework = response.data.rework;
         assembly.value.price = 0;
-
-        // items.value = response.data.assembly_item_set;
-
-        for (let index = 0; index < items.value.length; ++index) {
-          items.value[index].reserved_qty = 0;
-          items.value[index].price = 0;
-          items.value[index].available_qty = 0;
-
-          if (items.value[index].inventory_positions_set) {
-            let inventory_positions =
-              items.value[index].inventory_positions_set;
-            // items.value[index].manufacturer_order_number
-            //   .inventoryposition_set;
-            const inventory_reservation_set =
-              items.value[index].inventoryreservation_set;
-
-            for (let ip = 0; ip < inventory_positions.length; ++ip) {
-              inventory_positions[ip].assembly_item_id = items.value[index].id;
-              inventory_positions[ip].popup = ref();
-              inventory_positions[ip].reservation = { quantity: 0 };
-              items.value[index].available_qty += inventory_positions[ip].stock;
-
-              for (let ir = 0; ir < inventory_reservation_set.length; ++ir) {
-                if (
-                  inventory_positions[ip].id ==
-                  inventory_reservation_set[ir].inventory
-                ) {
-                  items.value[index].reserved_qty +=
-                    inventory_reservation_set[ir].quantity;
-
-                  inventory_positions[ip].reservation =
-                    inventory_reservation_set[ir];
-
-                  if (inventory_positions[ip].invoice) {
-                    items.value[index].price +=
-                      inventory_reservation_set[ir].quantity *
-                      inventory_positions[ip].invoice.unit_price;
-                  }
-                }
-              }
-            }
-            assembly.value.price += items.value[index].price;
-            items.value[index].inventory_positions = inventory_positions;
-          } else {
-            items.value[index].inventory_positions = [];
-          }
-        }
       });
     }
 
@@ -491,8 +397,21 @@ export default {
       load_assembly_details();
     }
 
-    onMounted(() => {
+    function reload() {
       load_assembly_details();
+      load_assembly_items();
+    }
+
+    function closeRework() {
+      api
+        .post(`/api/close-rework/${assembly.value.rework}/`)
+        .then((response) => {
+          reload();
+        });
+    }
+
+    onMounted(() => {
+      reload();
     });
 
     return {
@@ -511,14 +430,18 @@ export default {
       active_id,
       project_version,
 
+      columns,
       items,
 
       quantity_unit_id_to_name,
+      update_assembly_items_data,
+      closeRework,
     };
   },
   components: {
     AssemblyEditCreateDialog,
     DeleteConfirmationDialog,
+    AlternativeLocationTable,
   },
 };
 </script>

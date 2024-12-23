@@ -111,7 +111,9 @@
         </q-table>
       </q-tab-panel>
       <q-tab-panel name="assemblies">
-        <AssembliesTable></AssembliesTable>
+        <AssembliesTable
+          :project_version="project_version_id"
+        ></AssembliesTable>
       </q-tab-panel>
     </q-tab-panels>
 
@@ -214,9 +216,11 @@ export default {
         bom_id.value = Number(boms.value[0].id);
       });
 
-      api.get(`/api/assembly-job/`).then((response) => {
-        assembly_set.value = response.data;
-      });
+      api
+        .get(`/api/assembly-job/?project_version=${project_version_id}`)
+        .then((response) => {
+          assembly_set.value = response.data;
+        });
     }
 
     function on_assembly_save() {

@@ -8,6 +8,7 @@
     :loading="loading"
     selection="multiple"
     v-model:selected="selected"
+    @update:selected="onSelectionUpdate"
   >
     <template v-slot:top-right>
       <q-input
@@ -39,6 +40,22 @@ const columns = [
     sortable: true,
   },
   {
+    name: "assembled",
+    required: true,
+    label: "Assembled?",
+    align: "left",
+    field: "assembled",
+    sortable: true,
+  },
+  {
+    name: "sourced_externally",
+    required: true,
+    label: "Externally sourced?",
+    align: "left",
+    field: "sourced_externally",
+    sortable: true,
+  },
+  {
     name: "part",
     label: "Part",
     field: (row) => row.part.manufacturer_part_number,
@@ -63,7 +80,7 @@ const columns = [
   {
     name: "invoice",
     label: "Invoice",
-    field: "invoice",
+    field: "invoice_item",
   },
   {
     name: "price",
@@ -79,11 +96,15 @@ export default {
       type: Number,
       required: true,
     },
+    rework_filter_id: {
+      type: Array,
+    },
   },
   setup(props) {
     const loading = ref(false);
     const filter = ref("");
     const selected = ref([]);
+    const assembly_items = ref([]);
     const rows = ref([]);
 
     function load_assembly_items() {
@@ -92,9 +113,32 @@ export default {
         api
           .get(`/api/assembly-item/?assembly=${props.assembly_id}`)
           .then((response) => {
+            assembly_items.value = response.data;
             rows.value = response.data;
             loading.value = false;
           });
+      }
+    }
+
+    function filter_reworks(items) {
+      if (props.rework_filter_id && props.rework_filter_id.length > 0) {
+        rows.value = items.filter((x) => {
+          return props.rework_filter_id.includes(x.rework);
+        });
+      } else {
+        rows.value = items;
+      }
+    }
+
+    function onSelectionUpdate() {
+      if (selected.value.length == 0) {
+        filter_reworks(assembly_items.value);
+      } else {
+        filter_reworks(
+          assembly_items.value.filter((x) =>
+            x.part ? x.part.id == selected.value[0].part.id : false
+          )
+        );
       }
     }
 
@@ -102,6 +146,14 @@ export default {
       () => props.assembly_id,
       (current, previous) => {
         load_assembly_items();
+      }
+    );
+
+    watch(
+      () => props.rework_filter_id,
+      (current, previous) => {
+        console.log("updated rework id", props.rework_filter_id);
+        onSelectionUpdate();
       }
     );
 
@@ -115,6 +167,8 @@ export default {
       columns,
       rows,
       selected,
+
+      onSelectionUpdate,
     };
   },
 };

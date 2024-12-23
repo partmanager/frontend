@@ -1,106 +1,6 @@
 <template>
   <div class="q-pa-md">
-    <q-card align="justify">
-      <q-card-section>
-        <div class="text-h6">Filters</div>
-      </q-card-section>
-
-      <q-separator />
-
-      <q-card-section>
-        <div class="row">
-          <q-select
-            hint="Stock options"
-            filled
-            v-model="model"
-            multiple
-            :options="options"
-            counter
-            style="width: 250px"
-          />
-          <q-select
-            hint="Production status"
-            filled
-            v-model="production_status_model"
-            multiple
-            :options="production_status_options"
-            counter
-            style="width: 250px"
-          />
-          <q-select
-            hint="Package"
-            filled
-            v-model="package_model"
-            multiple
-            :options="package_options"
-            counter
-            style="width: 250px"
-          />
-          <q-select
-            hint="Manufacturer"
-            filled
-            v-model="manufacturer_model"
-            multiple
-            :options="manufacturer_options"
-            counter
-            style="width: 250px"
-          />
-        </div>
-
-        <br />
-
-        <div class="row">
-          <q-select
-            hint="Dielectric type"
-            filled
-            v-model="dielectric_type_model"
-            multiple
-            :options="dielectric_type_options"
-            counter
-            style="width: 250px"
-          />
-
-          <q-select
-            hint="Capacitor type"
-            filled
-            v-model="dielectric_type_model"
-            multiple
-            :options="dielectric_type_options"
-            counter
-            style="width: 250px"
-          />
-
-          <q-select
-            hint="Capacitance"
-            filled
-            v-model="dielectric_type_model"
-            multiple
-            :options="dielectric_type_options"
-            counter
-            style="width: 250px"
-          />
-
-          <q-select
-            hint="Capacitance tolerance"
-            filled
-            v-model="dielectric_type_model"
-            multiple
-            :options="dielectric_type_options"
-            counter
-            style="width: 250px"
-          />
-
-          <q-card>
-            <q-card-section>
-              <q-input hint="Minimal voltage" dense> </q-input>
-              <q-input hint="Maximal voltage" dense> </q-input>
-            </q-card-section>
-          </q-card>
-        </div>
-      </q-card-section>
-      <q-card-actions> </q-card-actions>
-    </q-card>
-
+    <PartsFiltersCard align="justify"></PartsFiltersCard>
     <br />
 
     <q-table
@@ -224,6 +124,7 @@ import { ref, onMounted } from "vue";
 import { api } from "boot/axios";
 import { useRoute } from "vue-router";
 import PartDetailDialog from "src/components/PartDetailDialog.vue";
+import PartsFiltersCard from "components/PartsFiltersCard.vue";
 
 const columns_begin = [
   {
@@ -439,9 +340,6 @@ const id_to_api_url = {
   },
 };
 
-const options = ["In local stock", "In distributor stock", "Has distributor"];
-const production_status_options = ["Active", "Unknown"];
-
 export default {
   setup() {
     const route = useRoute();
@@ -453,13 +351,6 @@ export default {
     const rows = ref([]);
     const loading = ref(false);
     const filter = ref();
-    const production_status_model = ref();
-    const package_model = ref();
-    const package_options = ref();
-    const dielectric_type_model = ref();
-    const dielectric_type_options = ref();
-    const manufacturer_model = ref();
-    const manufacturer_options = ref();
     const part_detail_dialog = ref(false);
     const part_detail_dialog_id = ref();
     const columns = ref();
@@ -512,15 +403,6 @@ export default {
       columns,
       rows,
       filter,
-      options,
-      production_status_model,
-      production_status_options,
-      package_model,
-      package_options,
-      dielectric_type_model,
-      dielectric_type_options,
-      manufacturer_model,
-      manufacturer_options,
 
       part_detail_dialog,
       part_detail_dialog_id,
@@ -538,6 +420,6 @@ export default {
       }
     );
   },
-  components: { PartDetailDialog },
+  components: { PartDetailDialog, PartsFiltersCard },
 };
 </script>

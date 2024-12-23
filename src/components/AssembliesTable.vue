@@ -65,14 +65,27 @@ const columns = [
 
 export default {
   name: "AssembliesTable",
-  setup() {
+  props: {
+    project_version: {
+      type: Number,
+    },
+  },
+  setup(props) {
     const filter = ref();
     const rows = ref([]);
 
     function load_project_details() {
-      api.get(`/api/assembly/`).then((response) => {
-        rows.value = response.data;
-      });
+      if (props.project_version) {
+        api
+          .get(`/api/assembly/?project_version=${props.project_version}`)
+          .then((response) => {
+            rows.value = response.data;
+          });
+      } else {
+        api.get(`/api/assembly/`).then((response) => {
+          rows.value = response.data;
+        });
+      }
     }
 
     onMounted(() => {

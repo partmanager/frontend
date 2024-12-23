@@ -195,42 +195,7 @@
         </q-tab-panel>
 
         <q-tab-panel name="files">
-          <q-table
-            :columns="[
-              {
-                name: 'filename',
-                label: 'Filename',
-                align: 'left',
-                field: 'name',
-              },
-              {
-                name: 'description',
-                label: 'Description',
-                align: 'left',
-                field: 'description',
-              },
-              {
-                name: 'version',
-                label: 'Version',
-                align: 'left',
-                field: 'series',
-              },
-              {
-                name: 'file_type',
-                label: 'File Type',
-                align: 'left',
-                field: 'file_type',
-              },
-            ]"
-            :rows="part_details.files"
-            ><template v-slot:body-cell-filename="props">
-              <q-td :props="props">
-                <div>
-                  <a :href="props.row.url">{{ props.value }}</a>
-                </div>
-              </q-td>
-            </template>
-          </q-table>
+          <FilesVersionTable :rows="part_details.files"></FilesVersionTable>
         </q-tab-panel>
       </q-tab-panels>
 
@@ -249,6 +214,7 @@ import { api } from "boot/axios";
 import { backendURL } from "src/boot/backend";
 import PartDistributorsStockData from "./PartDistributorsStockData.vue";
 import PartPackaging from "./PartPackaging.vue";
+import FilesVersionTable from "components/widgets/FilesVersionTable.vue";
 
 export default defineComponent({
   name: "PartDetailDialog",
@@ -304,7 +270,7 @@ export default defineComponent({
       symbol_slide,
     };
   },
-  components: { PartDistributorsStockData, PartPackaging },
+  components: { PartDistributorsStockData, PartPackaging, FilesVersionTable },
   created() {
     this.$watch(
       () => this.$props.id,

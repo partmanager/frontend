@@ -154,7 +154,9 @@ const routes = [
     path: "/parts/:id",
     props: { api_url: "/parts/api/get_part_menu", router_url: "/parts/" },
     component: () => import("layouts/MainLayout.vue"),
-    children: [{ path: "", component: () => import("pages/PartsPage.vue") }],
+    children: [
+      { path: "", component: () => import("pages/parts/PartsPage.vue") },
+    ],
   },
   {
     path: "/partscadlib",
