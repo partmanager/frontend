@@ -334,7 +334,7 @@ export default defineComponent({
         description: description,
         note: add_item_note.value,
         manufacturer: manufacturer_id,
-        part: mon,
+        mon: mon,
         storage_location: add_item_storage_location.value.id,
         invoice: invoice_id,
         stock: add_item_quantity.value,

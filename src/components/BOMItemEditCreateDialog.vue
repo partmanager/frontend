@@ -7,35 +7,72 @@
 
       <q-separator />
       <q-card-section>
-        <q-card
-          ><q-card-section>Filters</q-card-section>
-          <q-card-section>
-            <ManufacturerSelect
-              v-model="filters.manufacturer"
-              :initial_manufacturer_name="initial_manufacturer_name"
-              filled
-              label="Manufacturer"
-              hint="Manufacturer Name"
-              dense
-            ></ManufacturerSelect>
+        <q-tabs
+          v-model="part_selection_tab"
+          dense
+          class="text-grey"
+          active-color="primary"
+          indicator-color="primary"
+          align="justify"
+          narrow-indicator
+        >
+          <q-tab name="part" label="Part" />
+          <q-tab name="generic_part" label="Generic Part" />
+        </q-tabs>
+
+        <q-tab-panels v-model="part_selection_tab" animated>
+          <q-tab-panel name="part">
+            <q-card
+              ><q-card-section>Filters</q-card-section>
+              <q-card-section>
+                <ManufacturerSelect
+                  v-model="filters.manufacturer"
+                  :initial_manufacturer_name="initial_manufacturer_name"
+                  filled
+                  label="Manufacturer"
+                  hint="Manufacturer Name"
+                  dense
+                ></ManufacturerSelect>
+                <br />
+                <q-input
+                  v-model="filters.part_number"
+                  filled
+                  label="Part Number"
+                  hint="Manufacturer Part Number"
+                  dense
+                /> </q-card-section
+            ></q-card>
             <br />
-            <q-input
-              v-model="filters.part_number"
-              filled
-              label="Part Number"
-              hint="Manufacturer Part Number"
-              dense
-            /> </q-card-section
-        ></q-card>
-        <br />
-        <PartSelectTable
-          v-model="part_select_table"
-          title="Edit BOM Part"
-          v-model:selected="selected_part"
-          :manufacturer="filters.manufacturer"
-          :part_number="filters.part_number"
-          :onSelectChange="() => {}"
-        ></PartSelectTable>
+            <PartSelectTable
+              v-model="part_select_table"
+              title="Edit BOM Part"
+              v-model:selected="selected_part"
+              :manufacturer="filters.manufacturer"
+              :part_number="filters.part_number"
+              :onSelectChange="() => {}"
+            ></PartSelectTable>
+          </q-tab-panel>
+          <q-tab-panel name="generic_part">
+            <q-table
+              title="test"
+              selection="single"
+              :columns="[
+                {
+                  name: 'mpn',
+                  label: 'Generic Part Number',
+                  field: 'manufacturer_part_number',
+                },
+                {
+                  name: 'description',
+                  label: 'Description',
+                  field: 'description',
+                },
+              ]"
+              :rows="generic_rows"
+              v-model:selected="generic_part_selected"
+            ></q-table>
+          </q-tab-panel>
+        </q-tab-panels>
 
         <br />
         <q-select
@@ -128,6 +165,9 @@ export default defineComponent({
     const filtered_bom_group_set = ref([]);
     const bom_group_set = ref([]);
     const stringOptions = ref([]);
+    const part_selection_tab = ref("part");
+    const generic_rows = ref([]);
+    const generic_part_selected = ref();
 
     function createDesignator(val, done) {
       if (val.length > 0) {
@@ -160,16 +200,29 @@ export default defineComponent({
     }
 
     function validate_fields() {
-      return selected_part.value.length == 1;
+      return (
+        selected_part.value.length == 1 ||
+        generic_part_selected.value.length == 1
+      );
     }
 
     function fields_to_api_data() {
-      return {
-        part: selected_part.value[0].part.id,
-        quantity: quantity.value,
-        group: bom_group_select.value.value,
-        designators: designators.value,
-      };
+      if (part_selection_tab.value == "part") {
+        return {
+          part: selected_part.value[0].part.id,
+          quantity: quantity.value,
+          group: bom_group_select.value.value,
+          designators: designators.value,
+        };
+      } else {
+        console.log(generic_part_selected.value[0]);
+        return {
+          part: generic_part_selected.value[0].id,
+          quantity: quantity.value,
+          group: bom_group_select.value.value,
+          designators: designators.value,
+        };
+      }
     }
 
     function validate_and_create() {
@@ -205,7 +258,15 @@ export default defineComponent({
       }
     }
 
+    function load_generic_part() {
+      api.get(`/api/part-generic/`).then((response) => {
+        generic_rows.value = response.data.results;
+        console.log(generic_rows.value);
+      });
+    }
+
     function load_initial_data() {
+      load_generic_part();
       if (props.bom_item_id) {
         api.get(`/api/bom-item/${props.bom_item_id}/`).then((response) => {
           quantity.value = response.data.quantity;
@@ -287,6 +348,9 @@ export default defineComponent({
       note,
       initial_manufacturer_name,
       filtered_bom_group_set,
+      part_selection_tab,
+      generic_rows,
+      generic_part_selected,
 
       load_initial_data,
       validate_and_submit,
