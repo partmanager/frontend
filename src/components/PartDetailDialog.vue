@@ -65,6 +65,7 @@
                   <q-img
                     v-if="
                       part_details.package !== null &&
+                      part_details.package.files &&
                       part_details.package.files.rendered_image !== null &&
                       !part_details.package.files.rendered_image.endsWith(
                         'None'
@@ -96,71 +97,14 @@
         </q-tab-panel>
 
         <q-tab-panel name="package">
-          <q-card v-if="part_details.package">
-            <q-card-section>
-              <div class="text-h6">Package details</div>
-            </q-card-section>
-
-            <q-card-section>
-              <div class="row">
-                <div class="col col-md-6">
-                  Name: <strong>{{ part_details.package.name }}</strong
-                  ><br />
-                  Description:
-                  <strong>{{ part_details.package.description }}</strong
-                  ><br />
-                  Type: <strong>{{ part_details.package.type }}</strong>
-                </div>
-                <q-img
-                  v-if="part_details.package.files.dimensions_drawing"
-                  class="col col-md-6"
-                  :src="part_details.package.files.dimensions_drawing"
-                  spinner-color="white"
-                  :ratio="1"
-                  loading="lazy"
-                  :fit="scale - down"
-                />
-              </div>
-            </q-card-section>
-          </q-card>
-          <br />
-          <q-table
-            v-if="part_details.package"
-            title="Package dimensions"
-            :columns="[
-              {
-                name: 'name',
-                label: 'Parameter Name',
-                align: 'left',
-                field: 'name',
-              },
-              {
-                name: 'symbol',
-                label: 'Symbol',
-                align: 'left',
-                field: 'symbol',
-              },
-              {
-                name: 'value_min',
-                label: 'Value min',
-                align: 'left',
-                field: 'min',
-              },
-              { name: 'value', label: 'Value', align: 'left', field: 'value' },
-              {
-                name: 'value_max',
-                label: 'Value max',
-                align: 'left',
-                field: 'max',
-              },
-            ]"
-            :rows="part_details.package.dimensions"
-          >
-          </q-table>
+          <PackageCard :package_id="part_details.package"></PackageCard>
         </q-tab-panel>
 
         <q-tab-panel name="3dmodel">
-          <div class="row" v-if="part_details.package">
+          <div
+            class="row"
+            v-if="part_details.package && part_details.package.files"
+          >
             <iframe
               class="col-12"
               style="height: 35vw"
@@ -171,27 +115,11 @@
         </q-tab-panel>
 
         <q-tab-panel name="symbol_footprint">
-          <q-carousel
-            v-if="part_details.symbol"
-            class="col col-md-6"
-            animated
-            v-model="symbol_slide"
-            arrows
-            navigation
-          >
-            <q-carousel-slide
-              v-for="(picture, i) in part_details.symbol.svg_files"
-              :key="i"
-              :name="i + 1"
-              :img-src="
-                media_url +
-                part_details.manufacturer.name.replace(/ /, '_').toLowerCase() +
-                '_' +
-                part_details.manufacturer_part_number.replace(/#/, '') +
-                picture
-              "
-            />
-          </q-carousel>
+          <SymbolFootprintCard
+            :symbol="part_details.symbol"
+            :manufacturer_name="part_details.manufacturer.name"
+            :manufacturer_part_number="part_details.manufacturer_part_number"
+          ></SymbolFootprintCard>
         </q-tab-panel>
 
         <q-tab-panel name="files">
@@ -215,6 +143,8 @@ import { backendURL } from "src/boot/backend";
 import PartDistributorsStockData from "./PartDistributorsStockData.vue";
 import PartPackaging from "./PartPackaging.vue";
 import FilesVersionTable from "components/widgets/FilesVersionTable.vue";
+import PackageCard from "components/PackageCard.vue";
+import SymbolFootprintCard from "components/SymbolFootprintCard.vue";
 
 export default defineComponent({
   name: "PartDetailDialog",
@@ -267,10 +197,15 @@ export default defineComponent({
       part_details,
       onDetailDataRequest,
       media_url,
-      symbol_slide,
     };
   },
-  components: { PartDistributorsStockData, PartPackaging, FilesVersionTable },
+  components: {
+    PartDistributorsStockData,
+    PartPackaging,
+    FilesVersionTable,
+    PackageCard,
+    SymbolFootprintCard,
+  },
   created() {
     this.$watch(
       () => this.$props.id,

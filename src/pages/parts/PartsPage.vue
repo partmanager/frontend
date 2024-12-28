@@ -280,7 +280,7 @@ const id_to_api_url = {
   },
   7: {
     url: "ic",
-    part_types: "IC,ICV,ICR,IRF,IRS",
+    part_types: "IC,ICL,ICC,ICO,IMC,IDA,IAD,ICN,ICS,ICV,ICR,IRF,IRS",
     columns: columns_begin.concat(columns_end),
   },
   8: {

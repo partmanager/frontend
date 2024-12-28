@@ -113,16 +113,14 @@ export default {
     function load_part_locations() {
       if (props.part_id) {
         api
-          .get(`/api/part_locations/?part__part=${props.part_id}`)
+          .get(`/api/part_locations/?mon__part=${props.part_id}`)
           .then((response) => {
             rows.value = response.data;
           });
       } else if (props.mon_id) {
-        api
-          .get(`/api/part_locations/?part=${props.mon_id}`)
-          .then((response) => {
-            rows.value = response.data;
-          });
+        api.get(`/api/part_locations/?mon=${props.mon_id}`).then((response) => {
+          rows.value = response.data;
+        });
       }
     }
 
