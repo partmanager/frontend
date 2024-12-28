@@ -89,7 +89,7 @@
                 <q-icon name="warning" class="q-ml-xs" />
               </q-badge>
               <q-badge
-                v-if="!props.row.part"
+                v-if="!props.row.mon"
                 color="red"
                 title="Part unassigned."
               >
@@ -224,7 +224,7 @@
 
             <div
               v-if="
-                props.row.part &&
+                props.row.mon &&
                 props.row.alternative_locations != Null &&
                 props.row.alternative_locations.length > 0
               "
@@ -233,7 +233,7 @@
               <q-separator />
               <br />
               <AlternativeLocationTable
-                :mon_id="props.row.part"
+                :mon_id="props.row.mon"
               ></AlternativeLocationTable>
             </div>
 
@@ -299,11 +299,11 @@ import { ref, onMounted } from "vue";
 import { api } from "boot/axios";
 import { useRoute } from "vue-router";
 
-import InventoryHistory from "../components/InventoryHistory.vue";
-import StockUpdatePopup from "src/components/StockUpdatePopup.vue";
-import PartDetailDialog from "src/components/PartDetailDialog.vue";
-import PartDistributorsStockData from "src/components/PartDistributorsStockData.vue";
-import InventoryItemEditCreateDialog from "src/components/InventoryItemEditCreateDialog.vue";
+import InventoryHistory from "components/InventoryHistory.vue";
+import StockUpdatePopup from "components/StockUpdatePopup.vue";
+import PartDetailDialog from "components/PartDetailDialog.vue";
+import PartDistributorsStockData from "components/PartDistributorsStockData.vue";
+import InventoryItemEditCreateDialog from "components/InventoryItemEditCreateDialog.vue";
 import InvoiceInformationTable from "components/InvoiceInformationTable.vue";
 import AlternativeLocationTable from "components/AlternativeLocationTable.vue";
 import InventoryItemQuantityUpdateForm from "components/InventoryItemQuantityUpdateForm.vue";
