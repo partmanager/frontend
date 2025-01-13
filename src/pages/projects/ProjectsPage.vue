@@ -41,14 +41,21 @@
     <ProjectsTable
       :rows="rows"
       @deleteProjectClick="show_delete_confirmation_dialog"
-      @editProjectClick="show_delete_confirmation_dialog"
+      @editProjectClick="show_project_edit_dialog"
     >
     </ProjectsTable>
 
-    <CreateProjectDialog
+    <EditCreateProjectDialog
       v-model="project_create_dialog"
       @onCreated="on_project_create"
-    ></CreateProjectDialog>
+    ></EditCreateProjectDialog>
+
+    <EditCreateProjectDialog
+      v-model="project_edit_dialog"
+      title="Edit Project"
+      :project_id="active_item ? active_item.id : null"
+      @onCreated="on_project_create"
+    ></EditCreateProjectDialog>
 
     <DeleteConfirmationDialog
       v-model="project_delete_dialog"
@@ -68,7 +75,7 @@
 import { ref, onMounted } from "vue";
 import { api } from "boot/axios";
 import { useQuasar } from "quasar";
-import CreateProjectDialog from "components/dialogs/CreateProjectDialog.vue";
+import EditCreateProjectDialog from "components/dialogs/EditCreateProjectDialog.vue";
 import DeleteConfirmationDialog from "components/DeleteConfirmationDialog.vue";
 import ProjectsTable from "components/ProjectsTable.vue";
 
@@ -77,6 +84,7 @@ export default {
     const $q = useQuasar();
     const projects_table = ref();
     const project_create_dialog = ref();
+    const project_edit_dialog = ref();
     const project_delete_dialog = ref();
     const projects_import_dialog = ref();
     const active_item = ref();
@@ -109,7 +117,10 @@ export default {
       load_projects();
     }
 
-    function show_project_edit_dialog() {}
+    function show_project_edit_dialog(row) {
+      active_item.value = row;
+      project_edit_dialog.value = true;
+    }
 
     onMounted(() => {
       load_projects();
@@ -123,6 +134,7 @@ export default {
       projects_import_dialog,
 
       project_create_dialog,
+      project_edit_dialog,
       show_project_edit_dialog,
 
       project_delete_dialog,
@@ -132,7 +144,7 @@ export default {
     };
   },
   components: {
-    CreateProjectDialog,
+    EditCreateProjectDialog,
     DeleteConfirmationDialog,
     ProjectsTable,
   },

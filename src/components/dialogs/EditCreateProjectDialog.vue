@@ -1,8 +1,8 @@
 <template>
-  <q-dialog>
+  <q-dialog @before-show="load_initial_data">
     <q-card>
       <q-card-section>
-        <div class="text-h6">Create Project</div>
+        <div class="text-h6">{{ props.title }}</div>
       </q-card-section>
 
       <q-separator />
@@ -32,7 +32,7 @@
           label="Save"
           color="primary"
           type="submit"
-          @click="create_project_validate_and_submit()"
+          @click="validate_and_submit()"
         />
       </q-card-actions>
     </q-card>
@@ -45,20 +45,68 @@ import { api } from "boot/axios";
 import { useQuasar } from "quasar";
 
 export default {
-  // name: 'ComponentName',
-  emits: ["onCreated"],
+  name: "CreateProjectDialog",
+  props: {
+    project_id: {
+      type: Number,
+    },
+    title: {
+      type: String,
+      default: "Create Project",
+    },
+  },
+  emits: ["onCreated", "onUpdated"],
   setup(props, ctx) {
     const new_project_name = ref();
     const description = ref();
     const $q = useQuasar();
 
-    function create_project_validate_and_submit() {
+    function load_initial_data() {
+      if (props.project_id) {
+        api.get(`/api/project/${props.project_id}/`).then((response) => {
+          new_project_name.value = response.data.name;
+          description.value = response.data.description;
+        });
+      }
+    }
+
+    function validate_and_submit() {
       const data = {
         name: new_project_name.value,
         description: description.value,
       };
+
+      if (props.project_id) {
+        edit_project(data);
+      } else {
+        create_project(data);
+      }
+    }
+
+    function edit_project(validated_data) {
       api
-        .post("/api/project/", data)
+        .put(`/api/project/${props.project_id}/`, validated_data)
+        .then((response) => {
+          new_project_name.value = "";
+          $q.notify({
+            color: "positive",
+            message: `Project ${response.data.name} updated`,
+          });
+          ctx.emit("onUpdated");
+        })
+        .catch(() => {
+          $q.notify({
+            color: "negative",
+            position: "top",
+            message: "Unable to update project",
+            icon: "report_problem",
+          });
+        });
+    }
+
+    function create_project(validated_data) {
+      api
+        .post("/api/project/", validated_data)
         .then((response) => {
           new_project_name.value = "";
           $q.notify({
@@ -78,9 +126,11 @@ export default {
     }
 
     return {
+      props,
       new_project_name,
       description,
-      create_project_validate_and_submit,
+      validate_and_submit,
+      load_initial_data,
     };
   },
 };
