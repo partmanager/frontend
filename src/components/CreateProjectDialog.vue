@@ -14,7 +14,14 @@
           autofocus
           @keyup.enter="prompt = false"
           label="Project name"
-          hint="New project name"
+          hint="Project name"
+        />
+        <q-input
+          dense
+          type="textarea"
+          v-model="description"
+          label="Project description"
+          hint="Project description"
         />
       </q-card-section>
 
@@ -33,7 +40,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 import { api } from "boot/axios";
 import { useQuasar } from "quasar";
 
@@ -42,10 +49,14 @@ export default {
   emits: ["onCreated"],
   setup(props, ctx) {
     const new_project_name = ref();
+    const description = ref();
     const $q = useQuasar();
 
     function create_project_validate_and_submit() {
-      const data = { name: new_project_name.value };
+      const data = {
+        name: new_project_name.value,
+        description: description.value,
+      };
       api
         .post("/api/project/", data)
         .then((response) => {
@@ -66,7 +77,11 @@ export default {
         });
     }
 
-    return { new_project_name, create_project_validate_and_submit };
+    return {
+      new_project_name,
+      description,
+      create_project_validate_and_submit,
+    };
   },
 };
 </script>
