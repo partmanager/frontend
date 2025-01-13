@@ -79,7 +79,7 @@
               color="primary"
               icon="edit"
               title="Edit"
-              @click="show_project_edit_dialog(props.row)"
+              @click="show_project_version_edit_dialog(props.row)"
             />
             <q-btn
               padding="xs"
@@ -92,11 +92,19 @@
         </q-td> </template
     ></q-table>
 
-    <CreateProjectVersionDialog
+    <EditCreateProjectVersionDialog
       v-model="project_version_create_dialog"
       :project_id="project_id"
       @onCreated="on_project_version_created"
-    ></CreateProjectVersionDialog>
+    ></EditCreateProjectVersionDialog>
+
+    <EditCreateProjectVersionDialog
+      v-model="project_version_edit_dialog"
+      title="Edit Project Version"
+      :project_id="project_id"
+      :project_version_id="active_item ? active_item.id : null"
+      @onCreated="on_project_version_created"
+    ></EditCreateProjectVersionDialog>
 
     <DeleteConfirmationDialog
       v-model="project_delete_dialog"
@@ -117,7 +125,7 @@ import { ref, onMounted } from "vue";
 import { api } from "boot/axios";
 import { useRoute } from "vue-router";
 import DeleteConfirmationDialog from "components/DeleteConfirmationDialog.vue";
-import CreateProjectVersionDialog from "components/dialogs/CreateProjectVersionDialog.vue";
+import EditCreateProjectVersionDialog from "components/dialogs/EditCreateProjectVersionDialog.vue";
 
 const columns = [
   { name: "name", label: "Project Version", field: "name" },
@@ -141,6 +149,7 @@ export default {
 
     const project_delete_dialog = ref();
     const project_version_create_dialog = ref();
+    const project_version_edit_dialog = ref();
 
     function load_project() {
       api.get(`/api/project/${project_id}`).then((response) => {
@@ -154,6 +163,11 @@ export default {
     function show_delete_confirmation_dialog(row) {
       active_item.value = row;
       project_delete_dialog.value = true;
+    }
+
+    function show_project_version_edit_dialog(row) {
+      active_item.value = row;
+      project_version_edit_dialog.value = true;
     }
 
     function on_project_version_delete() {
@@ -193,11 +207,14 @@ export default {
 
       project_version_create_dialog,
       on_project_version_created,
+
+      project_version_edit_dialog,
+      show_project_version_edit_dialog,
     };
   },
   components: {
     DeleteConfirmationDialog,
-    CreateProjectVersionDialog,
+    EditCreateProjectVersionDialog,
   },
 };
 </script>
