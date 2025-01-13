@@ -117,7 +117,7 @@ import { ref, onMounted } from "vue";
 import { api } from "boot/axios";
 import { useRoute } from "vue-router";
 import DeleteConfirmationDialog from "components/DeleteConfirmationDialog.vue";
-import CreateProjectVersionDialog from "components/CreateProjectVersionDialog.vue";
+import CreateProjectVersionDialog from "components/dialogs/CreateProjectVersionDialog.vue";
 
 const columns = [
   { name: "name", label: "Project Version", field: "name" },

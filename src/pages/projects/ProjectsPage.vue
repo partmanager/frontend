@@ -68,7 +68,7 @@
 import { ref, onMounted } from "vue";
 import { api } from "boot/axios";
 import { useQuasar } from "quasar";
-import CreateProjectDialog from "components/CreateProjectDialog.vue";
+import CreateProjectDialog from "components/dialogs/CreateProjectDialog.vue";
 import DeleteConfirmationDialog from "components/DeleteConfirmationDialog.vue";
 import ProjectsTable from "components/ProjectsTable.vue";
 
