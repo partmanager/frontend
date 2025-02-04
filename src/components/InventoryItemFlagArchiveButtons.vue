@@ -34,11 +34,11 @@ export default {
       required: true,
     },
     flagged: {
-      type: Number,
+      type: Boolean,
       required: true,
     },
     archived: {
-      type: Number,
+      type: Boolean,
       required: true,
     },
     quantity: {

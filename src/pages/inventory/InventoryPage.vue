@@ -158,110 +158,8 @@
         </q-tr>
         <q-tr v-show="props.expand" :props="props">
           <q-td colspan="100%">
-            <br />
-            <div class="text-h4">
-              {{ props.row.manufacturer ? props.row.manufacturer.name : "" }}
-              {{ props.row.name }}
-            </div>
-            <br />
-            <q-separator />
-            <br />
-            <div class="row">
-              <div class="col">
-                Description:<br />
-                <div class="text-h5">
-                  {{ props.row.description }}
-                </div>
-                <br />
-                Location:
-                <strong>{{
-                  props.row.storage_location
-                    ? props.row.storage_location.location
-                    : "Error, location unknown"
-                }}</strong>
-                -> {{ props.row.stock }} {{ props.row.stock_unit_display
-                }}<br />
-                Condition: {{ props.row.condition_display }}<br />
-                Status: {{ props.row.status_display }}<br />
-                <br />
-                <InventoryItemQuantityUpdateForm
-                  class="row"
-                  :invoice_item_id="props.row.id"
-                  :quantity="props.row.stock"
-                  @onQuantityUpdated="reload_items()"
-                ></InventoryItemQuantityUpdateForm>
-                <br />
-                <InventoryItemFlagArchiveButtons
-                  class="row"
-                  :invoice_item_id="props.row.id"
-                  :flagged="props.row.flagged"
-                  :quantity="props.row.stock"
-                  :archived="props.row.archived"
-                  @onUpdated="reload_items()"
-                ></InventoryItemFlagArchiveButtons>
-              </div>
-
-              <q-img
-                v-if="props.row.image && !props.row.image.endsWith('None')"
-                class="col"
-                :src="props.row.image"
-                style="max-height: 150px; max-width: 150px"
-              />
-              <div class="col"></div>
-            </div>
-            <br />
-
-            <q-input v-model="props.row.note" filled readonly type="textarea" />
-
-            <div v-if="props.row.invoice != Null">
-              <br />
-              <q-separator />
-              <br />
-              <InvoiceInformationTable
-                :rows="[props.row.invoice]"
-              ></InvoiceInformationTable>
-            </div>
-
-            <div
-              v-if="
-                props.row.mon &&
-                props.row.alternative_locations != Null &&
-                props.row.alternative_locations.length > 0
-              "
-            >
-              <br />
-              <q-separator />
-              <br />
-              <AlternativeLocationTable
-                :mon_id="props.row.mon"
-              ></AlternativeLocationTable>
-            </div>
-
-            <InventoryReservationTable
-              v-if="props.row.id"
-              class="q-mt-md"
-              :inventory_item_id="props.row.id"
-            ></InventoryReservationTable>
-
-            <div
-              v-if="
-                Array.isArray(props.row.distributors) &&
-                props.row.distributors.length
-              "
-            >
-              <br />
-              <q-separator />
-              <br />
-
-              <PartDistributorsStockData :id="props.row.distributors">
-              </PartDistributorsStockData>
-            </div>
-
-            <br />
-            <q-separator />
-            <div class="text-left">
-              Inventory ID: {{ props.row.id }}, Part ID: {{ props.row.part }}
-            </div>
+            <InventoryTableDetailDiv :inventory_data="props.row">
+            </InventoryTableDetailDiv>
           </q-td>
         </q-tr>
       </template>
@@ -302,13 +200,8 @@ import { useRoute } from "vue-router";
 import InventoryHistory from "components/InventoryHistory.vue";
 import StockUpdatePopup from "components/StockUpdatePopup.vue";
 import PartDetailDialog from "components/PartDetailDialog.vue";
-import PartDistributorsStockData from "components/PartDistributorsStockData.vue";
 import InventoryItemEditCreateDialog from "components/InventoryItemEditCreateDialog.vue";
-import InvoiceInformationTable from "components/InvoiceInformationTable.vue";
-import AlternativeLocationTable from "components/AlternativeLocationTable.vue";
-import InventoryItemQuantityUpdateForm from "components/InventoryItemQuantityUpdateForm.vue";
-import InventoryItemFlagArchiveButtons from "components/InventoryItemFlagArchiveButtons.vue";
-import InventoryReservationTable from "components/InventoryReservationTable.vue";
+import InventoryTableDetailDiv from "components/InventoryTableDetailDiv.vue";
 
 const columns = [
   {
@@ -557,13 +450,8 @@ export default {
     InventoryHistory,
     StockUpdatePopup,
     PartDetailDialog,
-    PartDistributorsStockData,
     InventoryItemEditCreateDialog,
-    InvoiceInformationTable,
-    AlternativeLocationTable,
-    InventoryItemQuantityUpdateForm,
-    InventoryItemFlagArchiveButtons,
-    InventoryReservationTable,
+    InventoryTableDetailDiv,
   },
   created() {
     this.$watch(

@@ -18,7 +18,7 @@
 </template>
 
 <script>
-import { ref, defineComponent } from "vue";
+import { ref, defineComponent, computed } from "vue";
 import { api } from "boot/axios";
 import { useQuasar } from "quasar";
 
@@ -37,7 +37,7 @@ export default {
   setup(props, ctx) {
     const $q = useQuasar();
     const comment = ref();
-    const updated_quantity = ref(props.quantity);
+    const updated_quantity = computed(() => props.quantity);
 
     function update_item_stock() {
       if (updated_quantity.value !== props.quantity) {
@@ -70,7 +70,7 @@ export default {
       }
     }
 
-    return { comment, updated_quantity, update_item_stock };
+    return { comment, updated_quantity, props, update_item_stock };
   },
 };
 </script>
