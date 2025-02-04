@@ -134,6 +134,7 @@
                 <q-checkbox
                   v-model="props.row.sourced_externally"
                   label="Sourced externally by assembly house"
+                  :disable="!props.row.place"
                 ></q-checkbox>
                 <q-btn
                   label="Apply to all"
@@ -144,7 +145,7 @@
             </q-card>
             <!-- Part sources table -->
             <AlternativeLocationTable
-              v-if="!props.row.sourced_externally"
+              v-if="props.row.place && !props.row.sourced_externally"
               title="Part Locations"
               :part_id="props.row.part.id"
             ></AlternativeLocationTable>
@@ -327,6 +328,7 @@ export default {
         console.log(assembly_item);
         api.patch(`/api/assembly-item/${assembly_item.id}/`, data);
       }
+      reload();
     }
 
     function load_assembly_items() {
@@ -339,6 +341,8 @@ export default {
           items.value = Object.keys(obj).map((key) => ({
             id: Number(key),
             part: obj[key][0].part,
+            place: obj[key][0].assembled,
+            sourced_externally: obj[key][0].sourced_externally,
             assembly_items: obj[key],
           }));
           console.log(items.value);
