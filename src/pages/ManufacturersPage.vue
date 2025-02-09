@@ -180,7 +180,9 @@ export default {
       () => this.$route.params,
       (toParams, previousParams) => {
         // react to route changes...
-        load_manufacturer_detail(toParams.id);
+        if (toParams.id) {
+          load_manufacturer_detail(toParams.id);
+        }
       }
     );
   },

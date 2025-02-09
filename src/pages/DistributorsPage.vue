@@ -179,8 +179,10 @@ export default {
       () => this.$route.params,
       (toParams, previousParams) => {
         // react to route changes...
-        load_distributor_detail(toParams.id);
-        load_distributor_manufacturers(toParams.id);
+        if (toParams.id) {
+          load_distributor_detail(toParams.id);
+          load_distributor_manufacturers(toParams.id);
+        }
       }
     );
   },

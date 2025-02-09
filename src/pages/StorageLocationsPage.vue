@@ -288,7 +288,9 @@ export default {
       () => this.$route.params,
       (toParams, previousParams) => {
         // react to route changes...
-        this.load_storage_location_data(toParams.id);
+        if (toParams.id) {
+          this.load_storage_location_data(toParams.id);
+        }
       }
     );
   },

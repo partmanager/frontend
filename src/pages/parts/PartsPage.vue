@@ -416,7 +416,9 @@ export default {
       () => this.$route.params,
       (toParams, previousParams) => {
         // react to route changes...
-        this.load_parts();
+        if (toParams.id) {
+          this.load_parts();
+        }
       }
     );
   },

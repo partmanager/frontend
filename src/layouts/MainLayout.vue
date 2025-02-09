@@ -46,7 +46,7 @@
 </template>
 
 <script>
-import { defineComponent, onUpdated, ref } from "vue";
+import { defineComponent, onUpdated, ref, watch } from "vue";
 import { api } from "boot/axios";
 import { onMounted } from "vue";
 import ExportDialog from "src/components/ExportDialog.vue";
@@ -72,6 +72,16 @@ export default defineComponent({
     const simple = ref([]);
     const export_dialog = ref(false);
     const import_dialog = ref(false);
+
+    watch(
+      () => props.api_url,
+      (current, previous) => {
+        console.log(current, previous);
+        api.get(props.api_url).then((response) => {
+          simple.value = [response.data];
+        });
+      }
+    );
 
     onMounted(() => {
       api.get(props.api_url).then((response) => {

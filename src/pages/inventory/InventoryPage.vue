@@ -458,10 +458,14 @@ export default {
       () => this.$route.params,
       (toParams, previousParams) => {
         // react to route changes...
-        this.onRequest({
-          pagination: this.pagination,
-          filter: undefined,
-        });
+        console.log(toParams.id);
+        if (toParams.id) {
+          this.pagination.page = 1;
+          this.onRequest({
+            pagination: this.pagination,
+            filter: undefined,
+          });
+        }
       }
     );
   },
