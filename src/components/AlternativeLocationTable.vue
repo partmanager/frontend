@@ -11,6 +11,11 @@
 <script>
 import { ref, onMounted } from "vue";
 import { api } from "boot/axios";
+import {
+  format_condition,
+  format_quantity,
+  format_currency,
+} from "boot/formaters.js";
 
 const columns = [
   {
@@ -53,7 +58,7 @@ const columns = [
     field: "invoice",
     format: (val) => {
       if (val) {
-        return val.shipped_quantity;
+        return format_quantity(val.shipped_quantity, val.quantity_unit);
       }
     },
   },
@@ -62,6 +67,9 @@ const columns = [
     label: "Stock quantity",
     align: "left",
     field: "stock",
+    format: (val, row) => {
+      return format_quantity(val, row.stock_unit);
+    },
   },
   {
     name: "storage_location",
@@ -77,6 +85,7 @@ const columns = [
     label: "Condition",
     align: "left",
     field: "condition",
+    format: format_condition,
   },
   {
     name: "price",
@@ -84,8 +93,10 @@ const columns = [
     align: "left",
     field: "invoice",
     format: (val) => {
-      if (val) {
-        return val.unit_price.net + " " + val.unit_price.currency_display;
+      if (val && val.unit_price) {
+        return format_currency(val.unit_price.net, val.unit_price.currency);
+      } else {
+        return "";
       }
     },
   },
@@ -93,7 +104,17 @@ const columns = [
     name: "stock_value",
     label: "Stock value",
     align: "left",
-    field: "stock_value",
+    field: "invoice",
+    format: (val, row) => {
+      if (val && val.unit_price) {
+        return format_currency(
+          val.unit_price.net * row.stock,
+          val.unit_price.currency
+        );
+      } else {
+        return "";
+      }
+    },
   },
 ];
 

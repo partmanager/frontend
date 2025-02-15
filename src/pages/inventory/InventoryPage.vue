@@ -205,6 +205,11 @@ import StockUpdatePopup from "components/StockUpdatePopup.vue";
 import PartDetailDialog from "components/PartDetailDialog.vue";
 import InventoryItemEditCreateDialog from "components/InventoryItemEditCreateDialog.vue";
 import InventoryTableDetailDiv from "components/InventoryTableDetailDiv.vue";
+import {
+  format_condition,
+  format_quantity,
+  format_currency,
+} from "boot/formaters.js";
 
 const columns = [
   {
@@ -249,13 +254,18 @@ const columns = [
       }
     },
   },
-  { name: "condition", label: "Condition", field: "condition_display" },
+  {
+    name: "condition",
+    label: "Condition",
+    field: "condition",
+    format: format_condition,
+  },
   {
     name: "stock",
     label: "Stock",
     field: "stock",
     format: (val, row) => {
-      return val + " " + row.stock_unit_display;
+      return format_quantity(val, row.stock_unit);
     },
   },
   {
@@ -264,9 +274,9 @@ const columns = [
     field: "stock",
     format: (val, row) => {
       if (row.reserved_quantity) {
-        return val - row.reserved_quantity + " " + row.stock_unit_display;
+        return format_quantity(val - row.reserved_quantity, row.stock_unit);
       } else {
-        return val + " " + row.stock_unit_display;
+        return format_quantity(val, row.stock_unit);
       }
     },
   },
@@ -275,7 +285,7 @@ const columns = [
     label: "Reserved",
     field: "reserved_quantity",
     format: (val, row) => {
-      return val + " " + row.stock_unit_display;
+      return format_quantity(val, row.stock_unit);
     },
   },
   {
@@ -284,11 +294,12 @@ const columns = [
     field: "invoice",
     format: (val, row) => {
       if (val && val.unit_price) {
-        return (
-          parseFloat(val.unit_price.net * row.stock).toFixed(2) +
-          " " +
-          val.unit_price.currency_display
+        return format_currency(
+          val.unit_price.net * row.stock,
+          val.unit_price.currency
         );
+      } else {
+        return "";
       }
     },
   },
@@ -298,7 +309,9 @@ const columns = [
     field: "invoice",
     format: (val) => {
       if (val && val.unit_price) {
-        return val.unit_price.net + " " + val.unit_price.currency_display;
+        return format_currency(val.unit_price.net, val.unit_price.currency);
+      } else {
+        return "";
       }
     },
   },
