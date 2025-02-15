@@ -158,7 +158,10 @@
         </q-tr>
         <q-tr v-show="props.expand" :props="props">
           <q-td colspan="100%">
-            <InventoryTableDetailDiv :inventory_data="props.row">
+            <InventoryTableDetailDiv
+              :inventory_data="props.row"
+              @onUpdated="reload_items()"
+            >
             </InventoryTableDetailDiv>
           </q-td>
         </q-tr>

@@ -34,7 +34,7 @@
           class="row"
           :invoice_item_id="props.inventory_data.id"
           :quantity="props.inventory_data.stock"
-          @onQuantityUpdated="reload_items()"
+          @onQuantityUpdated="onChange()"
         ></InventoryItemQuantityUpdateForm>
         <br />
         <InventoryItemFlagArchiveButtons
@@ -43,7 +43,7 @@
           :flagged="props.inventory_data.flagged"
           :quantity="props.inventory_data.stock"
           :archived="props.inventory_data.archived"
-          @onUpdated="reload_items()"
+          @onUpdated="onChange()"
         ></InventoryItemFlagArchiveButtons>
       </div>
 
@@ -141,8 +141,13 @@ export default defineComponent({
       required: true,
     },
   },
-  setup(props) {
-    return { props };
+  emits: ["onUpdated"],
+  setup(props, ctx) {
+    function onChange() {
+      ctx.emit("onUpdated");
+    }
+
+    return { props, onChange };
   },
   components: {
     PartDistributorsStockData,
