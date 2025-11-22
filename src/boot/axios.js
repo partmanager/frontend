@@ -1,6 +1,7 @@
 import { boot } from "quasar/wrappers";
 import axios from "axios";
 import { backendURL } from "./backend";
+import { LocalStorage } from "quasar";
 import qs from "qs";
 
 const api = axios.create({
@@ -13,6 +14,11 @@ const api = axios.create({
     return qs.stringify(params, { arrayFormat: "repeat" });
   },
 });
+
+const token = LocalStorage.getItem("partmanager-token");
+if (token) {
+  api.defaults.headers.common["Authorization"] = "Token " + token;
+}
 
 export default boot(({ app }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api

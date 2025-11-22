@@ -26,6 +26,8 @@ const columns = [
     format: (val) => {
       if (val) {
         return val.invoice.distributor.name;
+      } else {
+        return "";
       }
     },
   },
@@ -37,6 +39,8 @@ const columns = [
     format: (val) => {
       if (val) {
         return val.invoice.number;
+      } else {
+        return "";
       }
     },
   },
@@ -48,6 +52,8 @@ const columns = [
     format: (val) => {
       if (val) {
         return val.invoice.invoice_date;
+      } else {
+        return "";
       }
     },
   },
@@ -59,6 +65,8 @@ const columns = [
     format: (val) => {
       if (val) {
         return format_quantity(val.shipped_quantity, val.quantity_unit);
+      } else {
+        return "";
       }
     },
   },

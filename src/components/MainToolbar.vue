@@ -48,6 +48,43 @@
         </q-list>
       </q-btn-dropdown>
     </q-tabs>
+
+    <q-btn dense flat no-wrap>
+      <q-avatar rounded size="32px">
+        <img :src="users_store.me.avatar" />
+      </q-avatar>
+      <q-icon name="arrow_drop_down" size="20px" />
+
+      <q-menu auto-close>
+        <q-list dense>
+          <q-item>
+            <q-item-section>
+              <div>
+                Signed in as <strong>{{ users_store.me.username }}</strong>
+              </div>
+            </q-item-section>
+          </q-item>
+          <q-separator />
+          <q-item clickable disable>
+            <q-item-section>Your profile</q-item-section>
+          </q-item>
+          <q-item clickable disable>
+            <q-item-section>Your projects</q-item-section>
+          </q-item>
+          <q-separator />
+          <q-item clickable disable>
+            <q-item-section>Help</q-item-section>
+          </q-item>
+          <q-item clickable disable>
+            <q-item-section>Settings</q-item-section>
+          </q-item>
+          <q-item clickable>
+            <q-item-section @click="onSignOut">Sign out</q-item-section>
+          </q-item>
+        </q-list>
+      </q-menu>
+    </q-btn>
+
     <div>Quasar v{{ $q.version }}</div>
     <q-btn dense flat round icon="menu" @click="$emit('toggleRightDrawer')" />
   </q-toolbar>
@@ -56,10 +93,16 @@
 <script>
 import { defineComponent } from "vue";
 import { api } from "boot/axios";
+import { useUsersStore } from "stores/users";
+import { useQuasar } from "quasar";
 
 export default defineComponent({
   name: "MainToolbar",
   setup(props) {
+    const users_store = useUsersStore();
+
+    users_store.fetchData();
+
     function update_parts() {
       api.get("/parts/api/part/import").then((response) => {});
     }
@@ -73,10 +116,17 @@ export default defineComponent({
       api.post("/updategit").then((response) => {});
     }
 
+    function onSignOut() {
+      $q.localStorage.removeItem("token");
+      router.push({ path: "/login" });
+    }
+
     return {
       update_parts,
       update_distributors_and_inventory,
       update_partsdb,
+      users_store,
+      onSignOut,
     };
   },
 });
