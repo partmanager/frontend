@@ -129,86 +129,9 @@
     </q-table>
 
     <div class="q-gutter-md">
-      <q-dialog v-model="invoice_import_dialog">
-        <q-card style="width: 700px; max-width: 80vw">
-          <q-card-section>
-            <div class="text-h6">Invoice Import</div>
-          </q-card-section>
-
-          <q-form
-            :action="backendURL + '/api/invoiceImport'"
-            method="post"
-            enctype="multipart/form-data"
-            class="q-gutter-md"
-          >
-            <q-card-section>
-              <q-select
-                name="importer"
-                filled
-                v-model="invoice_importer_importer"
-                :options="invoice_importer_options"
-                label="Importer"
-              />
-            </q-card-section>
-            <q-card-section>
-              <q-select
-                name="distributor"
-                filled
-                v-model="invoice_distributor"
-                :options="invoice_distributor_options"
-                option-label="name"
-                option-value="name"
-                label="Distributor"
-              />
-            </q-card-section>
-
-            <q-card-section>
-              <q-input
-                name="invoice_date"
-                filled
-                v-model="date"
-                mask="date"
-                :rules="['date']"
-              >
-                <template v-slot:append>
-                  <q-icon name="event" class="cursor-pointer">
-                    <q-popup-proxy
-                      cover
-                      transition-show="scale"
-                      transition-hide="scale"
-                    >
-                      <q-date v-model="date">
-                        <div class="row items-center justify-end">
-                          <q-btn
-                            v-close-popup
-                            label="Close"
-                            color="primary"
-                            flat
-                          />
-                        </div>
-                      </q-date>
-                    </q-popup-proxy>
-                  </q-icon>
-                </template>
-              </q-input>
-            </q-card-section>
-
-            <q-card-section>
-              <q-file
-                name="file"
-                filled
-                v-model="invoice_importer_file"
-                label="Invoice file"
-              />
-            </q-card-section>
-
-            <q-card-actions align="right" class="bg-white text-teal">
-              <q-btn flat label="Cancel" v-close-popup />
-              <q-btn flat label="Import" type="submit" />
-            </q-card-actions>
-          </q-form>
-        </q-card>
-      </q-dialog>
+      <InvoiceImportDialog
+        v-model="invoice_import_dialog"
+      ></InvoiceImportDialog>
 
       <InvoiceEditCreateDialog
         v-model="invoice_edit_dialog"
@@ -256,6 +179,7 @@ import { api_invoice_delete } from "boot/invoices_api.js";
 import { format_currency } from "boot/formaters.js";
 import InvoiceEditCreateDialog from "src/components/InvoiceEditCreateDialog.vue";
 import DeleteConfirmationDialog from "src/components/DeleteConfirmationDialog.vue";
+import InvoiceImportDialog from "src/components/dialogs/InvoiceImportDialog.vue";
 
 const columns = [
   {
@@ -327,7 +251,6 @@ export default {
     const date = ref();
     const invoice_edit_dialog = ref(false);
     const invoice_create_dialog = ref(false);
-    const invoice_distributor_options = ref(get_distributor_set());
 
     const active_invoice = ref({ id: null });
     const delete_confirmation_dialog = ref(false);
@@ -393,15 +316,6 @@ export default {
       return due_date < now;
     }
 
-    function submitForm() {
-      const importer = invoice_importer_importer.value;
-      let formData = new FormData();
-      formData.append("importer", "asdf");
-      // formData.append('file', invoice_importer_file.value)
-      const request = new XMLHttpRequest();
-      request.open("POST", "http://127.0.0.1:8000/invoices/import");
-      request.send(formData);
-    }
     onMounted(() => {
       // get initial data from server (1st page)
       onRequest({
@@ -418,14 +332,7 @@ export default {
       rows,
       date,
       invoice_import_dialog: ref(false),
-      invoice_importer_options: [
-        "Archive importer",
-        "TME CSV file importer",
-        "Generic CSV file importer",
-      ],
-      invoice_distributor: ref(),
-      invoice_distributor_options,
-      invoice_importer_importer: ref(),
+
       invoice_importer_file: ref(),
 
       invoice_edit_dialog,
@@ -447,12 +354,10 @@ export default {
       distributor_id_to_name,
     };
   },
-  methods: {
-    onSubmit2(evt) {
-      console.log("@submit - submiting to invoice import", evt);
-      evt.target.submit();
-    },
+  components: {
+    InvoiceEditCreateDialog,
+    DeleteConfirmationDialog,
+    InvoiceImportDialog,
   },
-  components: { InvoiceEditCreateDialog, DeleteConfirmationDialog },
 };
 </script>
