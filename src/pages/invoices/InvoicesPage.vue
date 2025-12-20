@@ -68,7 +68,7 @@
       </template>
       <template v-slot:body-cell-action="props">
         <q-td :props="props">
-          <div>
+          <div class="q-gutter-sm">
             <q-btn
               padding="xs"
               color="primary"
@@ -94,13 +94,34 @@
           </div>
         </q-td>
       </template>
+      <template v-slot:body-cell-paid="props">
+        <q-td :props="props">
+          <div>
+            <q-btn
+              v-if="props.row.paid"
+              padding="xs"
+              color="primary"
+              icon="check"
+              title="Paid"
+            />
+            <q-btn
+              v-if="!props.row.paid"
+              padding="xs"
+              :color="is_overdue(props.row.due_date) ? 'red' : 'yellow'"
+              icon="close"
+              title="Not paid"
+            />
+          </div>
+        </q-td>
+      </template>
       <template v-slot:body-cell-status="props">
         <q-td :props="props">
           <div>
-            <q-icon
-              v-if="props.row.all_items_mapped"
-              name="star"
-              title="All invoice items are mapped to part or service."
+            <q-btn
+              padding="xs"
+              :color="props.row.status ? 'primary' : 'yellow'"
+              :icon="props.row.status ? 'check' : 'close'"
+              title="Paid"
             />
           </div>
         </q-td>
@@ -224,12 +245,15 @@
 
 <script>
 import { ref, onMounted } from "vue";
+import { date } from "quasar";
 import { api } from "boot/axios";
 import { backendURL } from "src/boot/backend";
 import {
   get_distributor_set,
   distributor_id_to_name,
 } from "src/boot/distributor_set";
+import { api_invoice_delete } from "boot/invoices_api.js";
+import { format_currency } from "boot/formaters.js";
 import InvoiceEditCreateDialog from "src/components/InvoiceEditCreateDialog.vue";
 import DeleteConfirmationDialog from "src/components/DeleteConfirmationDialog.vue";
 
@@ -248,6 +272,8 @@ const columns = [
   },
   { name: "action", label: "Action", align: "left" },
   { name: "date", align: "center", label: "Date", field: "invoice_date" },
+  { name: "due_date", align: "center", label: "Due date", field: "due_date" },
+  { name: "paid", align: "center", label: "Paid", field: "paid" },
   { name: "items_count", label: "Item Count", field: "item_count" },
   { name: "status", label: "Status", field: "status" },
   {
@@ -255,7 +281,7 @@ const columns = [
     label: "Price (net)",
     format: (val) => {
       if (val) {
-        return `${val.net} ${val.currency_display}`;
+        return format_currency(val.net, val.currency);
       } else {
         return "Error";
       }
@@ -267,7 +293,7 @@ const columns = [
     label: "Price (gross)",
     format: (val) => {
       if (val) {
-        return `${val.gross} ${val.currency_display}`;
+        return format_currency(val.gross, val.currency);
       } else {
         return "Error";
       }
@@ -279,7 +305,7 @@ const columns = [
     label: "Local Price",
     format: (val) => {
       if (val) {
-        return `${val.net} ${val.currency_display}`;
+        return format_currency(val.net, val.currency);
       } else {
         return "Error";
       }
@@ -311,7 +337,7 @@ export default {
       const filter = props.filter;
       loading.value = true;
       api
-        .get("/api/invoice", {
+        .get("/api/invoice/invoice", {
           params: {
             search: filter,
             pageSize: rowsPerPage,
@@ -347,9 +373,7 @@ export default {
     }
 
     function api_call_delete_invoice() {
-      api
-        .delete(`/api/invoice/${active_invoice.value.id}/`)
-        .then((response) => {});
+      api_invoice_delete(active_invoice.value.id);
       delete_confirmation_dialog.value = false;
       reload_invoices_table();
     }
@@ -362,6 +386,11 @@ export default {
     function on_invoice_create() {
       invoice_create_dialog.value = false;
       reload_invoices_table();
+    }
+
+    function is_overdue(due_date) {
+      const now = Date.now();
+      return due_date < now;
     }
 
     function submitForm() {
@@ -412,6 +441,8 @@ export default {
       api_call_delete_invoice,
       on_invoice_edit,
       on_invoice_create,
+
+      is_overdue,
 
       distributor_id_to_name,
     };

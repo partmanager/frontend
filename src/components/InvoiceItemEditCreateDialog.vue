@@ -231,7 +231,7 @@ export default defineComponent({
     function invoice_item_edit_load_data() {
       if (props.invoice_item_id) {
         api
-          .get(`/api/invoiceItem/${props.invoice_item_id.id}/`)
+          .get(`/api/invoice/item/${props.invoice_item_id.id}/`)
           .then((response) => {
             invoice_item.value.position = response.data.position_in_invoice;
             invoice_item.value.order_number = response.data.order_number;
@@ -310,7 +310,7 @@ export default defineComponent({
       if (validate_fields()) {
         const data = fields_to_api_data();
         api
-          .post("/api/invoiceItem/", data)
+          .post("/api/invoice/item/", data)
           .then((response) => {})
           .catch((error) => {
             console.log("Problem submitting New Invoice Item", error);
@@ -330,7 +330,7 @@ export default defineComponent({
       if (validate_fields()) {
         const data = fields_to_api_data();
         api
-          .put(`/api/invoiceItem/${invoce_item_id}/`, data)
+          .put(`/api/invoice/item/${invoce_item_id}/`, data)
           .then((response) => {})
           .catch((error) => {
             console.log("Problem Updating Invoice Item", error);

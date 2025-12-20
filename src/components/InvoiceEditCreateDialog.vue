@@ -15,7 +15,7 @@
         dense
       />
 
-      <q-input filled v-model="date" label="Date" hist="Invoice Date" dense>
+      <q-input filled v-model="date" label="Date" hint="Invoice Date" dense>
         <template v-slot:append>
           <q-icon name="event" class="cursor-pointer">
             <q-popup-proxy
@@ -35,6 +35,36 @@
 
       <br />
 
+      <q-input
+        filled
+        v-model="due_date"
+        label="Due date"
+        hint="Invoice Due Date"
+        dense
+      >
+        <template v-slot:append>
+          <q-icon name="event" class="cursor-pointer">
+            <q-popup-proxy
+              cover
+              transition-show="scale"
+              transition-hide="scale"
+            >
+              <q-date v-model="due_date" mask="YYYY-MM-DD">
+                <div class="row items-center justify-end">
+                  <q-btn v-close-popup label="Close" color="primary" flat />
+                </div>
+              </q-date>
+            </q-popup-proxy>
+          </q-icon>
+        </template>
+      </q-input>
+
+      <br />
+
+      <q-checkbox v-model="paid" label="Paid" />
+
+      <br />
+
       <DistributorSelect
         v-model="distributor"
         ref="distributor_ref"
@@ -47,6 +77,15 @@
         label="Invoice file"
         hint="Invoice file"
         dense
+      />
+
+      <q-input
+        v-model="note"
+        type="textarea"
+        filled
+        autogrow
+        label="Note"
+        :value="invoice.note"
       />
 
       <q-separator />
@@ -84,9 +123,12 @@ export default defineComponent({
   },
   setup(props) {
     const date = ref();
+    const due_date = ref();
+    const paid = ref();
     const file = ref();
+    const note = ref();
     const distributor = ref();
-    const invoice = ref({ number: null, date: null });
+    const invoice = ref({ number: null, date: null, note: null });
 
     function validate() {
       return true;
@@ -96,6 +138,9 @@ export default defineComponent({
       const data = {
         number: invoice.value.number,
         invoice_date: date.value,
+        due_date: due_date.value,
+        paid: paid.value,
+        note: note.value,
         distributor: distributor.value.id,
       };
       let formData = new FormData();
@@ -104,6 +149,9 @@ export default defineComponent({
       }
       formData.append("number", data.number);
       formData.append("invoice_date", data.invoice_date);
+      formData.append("due_date", data.due_date);
+      formData.append("paid", data.paid);
+      formData.append("note", data.note);
       formData.append("distributor", data.distributor);
       return formData;
     }
@@ -113,7 +161,7 @@ export default defineComponent({
         if (props.id_to_edit) {
           const formData = fields_to_api_form_data();
           api
-            .put(`/api/invoice/${props.id_to_edit}/`, formData, {
+            .put(`/api/invoice/invoice/${props.id_to_edit}/`, formData, {
               headers: { "Content-Type": "multipart/form-data" },
             })
             .then((response) => {})
@@ -125,7 +173,7 @@ export default defineComponent({
         } else {
           const formData = fields_to_api_form_data();
           api
-            .post(`/api/invoice/`, formData, {
+            .post(`/api/invoice/invoice`, formData, {
               headers: { "Content-Type": "multipart/form-data" },
             })
             .then((response) => {})
@@ -140,20 +188,28 @@ export default defineComponent({
 
     function load_invoice_data() {
       if (props.id_to_edit) {
-        api.get(`/api/invoice/${props.id_to_edit}/`).then((response) => {
-          invoice.value.number = response.data.number;
-          invoice.value.date = response.data.invoice_date;
+        api
+          .get(`/api/invoice/invoice/${props.id_to_edit}/`)
+          .then((response) => {
+            invoice.value.number = response.data.number;
+            invoice.value.date = response.data.invoice_date;
 
-          date.value = response.data.invoice_date;
+            date.value = response.data.invoice_date;
+            due_date.value = response.data.due_date;
+            paid.value = response.data.paid;
+            note.value = response.data.note;
 
-          distributor.value = response.data.distributor;
-        });
+            distributor.value = response.data.distributor;
+          });
       }
     }
 
     return {
       date,
+      due_date,
+      paid,
       file,
+      note,
       distributor,
       invoice,
 

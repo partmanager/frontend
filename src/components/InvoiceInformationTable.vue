@@ -4,13 +4,21 @@
 </template>
 
 <script>
+import { format_quantity, format_currency } from "boot/formaters.js";
+
 const columns = [
   {
     name: "distributor",
     label: "Distributor",
     align: "left",
     field: "invoice",
-    format: (val) => val.distributor.name,
+    format: (val) => {
+      if (val && val.distributor) {
+        return val.distributor.name;
+      } else {
+        return "";
+      }
+    },
   },
   {
     name: "invoice",
@@ -30,6 +38,9 @@ const columns = [
     label: "Shipped quantity",
     align: "left",
     field: "shipped_quantity",
+    format: (val, row) => {
+      return format_quantity(val, row.quantity_unit);
+    },
   },
   {
     name: "LOT_number",
@@ -60,7 +71,7 @@ const columns = [
     label: "Unit Price",
     align: "left",
     field: "unit_price",
-    format: (val) => val.net + " " + val.currency_display,
+    format: (val) => format_currency(val.net, val.currency),
   },
   {
     name: "stock_value",

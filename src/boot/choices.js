@@ -22,6 +22,13 @@ const currency_dict = {
   1: "EUR",
 };
 
+const paymentTypeOptions = [
+  { label: "Bank Transfer", value: 1 },
+  { label: "Cash", value: 2 },
+  { label: "Credit Card", value: 3 },
+  { label: "PayPal", value: 4 },
+];
+
 function get_quantity_unit_by_id(id) {
   const found = quantity_unit_set.filter((v) => v.value == id);
   if (found) {
@@ -46,6 +53,14 @@ function quantity_unit_id_to_name(id) {
   return null;
 }
 
+function get_paymentMethod_by_id(id) {
+  const found = paymentTypeOptions.filter((v) => v.value == id);
+  if (found) {
+    return found[0];
+  }
+  return null;
+}
+
 export {
   quantity_unit_set,
   quantity_dict,
@@ -54,4 +69,6 @@ export {
   get_quantity_unit_by_id,
   get_currency_by_id,
   quantity_unit_id_to_name,
+  paymentTypeOptions,
+  get_paymentMethod_by_id,
 };

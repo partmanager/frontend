@@ -8,12 +8,15 @@ const routes = [
     path: "/invoices",
     component: () => import("layouts/DefaultLayout.vue"),
     children: [
-      { path: "", component: () => import("pages/InvoicesPage.vue") },
+      { path: "", component: () => import("pages/invoices/InvoicesPage.vue") },
       {
         path: ":id(\\d+)",
-        component: () => import("pages/InvoiceDetailPage.vue"),
+        component: () => import("pages/invoices/InvoiceDetailPage.vue"),
       },
-      { path: "items", component: () => import("pages/InvoiceItemsPage.vue") },
+      {
+        path: "items",
+        component: () => import("pages/invoices/InvoiceItemsPage.vue"),
+      },
     ],
   },
   {
