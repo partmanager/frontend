@@ -7,7 +7,6 @@
     @filter="filter_distributors_select"
     use-input
     fill-input
-    hide-selected
     filled
   />
 </template>

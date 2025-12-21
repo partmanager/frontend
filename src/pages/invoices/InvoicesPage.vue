@@ -7,6 +7,8 @@
       >Show all invoice items</q-btn
     ><br />
     <br />
+    <InvoicesFiltersCard @on_change="on_filters_update"></InvoicesFiltersCard>
+    <br />
     <q-table
       title="Invoices"
       row-key="id"
@@ -168,18 +170,15 @@
 
 <script>
 import { ref, onMounted } from "vue";
-import { date } from "quasar";
 import { api } from "boot/axios";
 import { backendURL } from "src/boot/backend";
-import {
-  get_distributor_set,
-  distributor_id_to_name,
-} from "src/boot/distributor_set";
+import { distributor_id_to_name } from "src/boot/distributor_set";
 import { api_invoice_delete } from "boot/invoices_api.js";
 import { format_currency } from "boot/formaters.js";
 import InvoiceEditCreateDialog from "src/components/InvoiceEditCreateDialog.vue";
 import DeleteConfirmationDialog from "src/components/DeleteConfirmationDialog.vue";
 import InvoiceImportDialog from "src/components/dialogs/InvoiceImportDialog.vue";
+import InvoicesFiltersCard from "src/components/widgets/InvoicesFiltersCard.vue";
 
 const columns = [
   {
@@ -255,17 +254,60 @@ export default {
     const active_invoice = ref({ id: null });
     const delete_confirmation_dialog = ref(false);
 
+    const distributor_filter = ref([]);
+
+    function date_to_drf_filter(date) {
+      if (date) {
+        const [month, day, year] = [
+          date.getMonth(),
+          date.getDate(),
+          date.getFullYear(),
+        ];
+        return `${month + 1}/${day}/${year}`;
+      } else {
+        return null;
+      }
+    }
+
     function onRequest(props) {
       const { page, rowsPerPage } = props.pagination;
-      const filter = props.filter;
+      const search = props.filter;
+      const filter = props.filter2 || { distrubutor: null, privateUse: null };
+      console.log(filter);
+      let params = {
+        search: search,
+        pageSize: rowsPerPage,
+        pageNumber: page,
+        paid: filter.paid,
+      };
+
+      if (filter.distributor) {
+        params.distributor__in = filter.distributor.join(",");
+      }
+
+      if (filter.invoiceDate_from) {
+        params.invoice_date__gte = date_to_drf_filter(filter.invoiceDate_from);
+      }
+      if (filter.invoiceDate_to) {
+        params.invoice_date__lte = date_to_drf_filter(filter.invoiceDate_to);
+      }
+      if (filter.dueDate) {
+        params.due_date__gte = date_to_drf_filter(filter.dueDate.from);
+        params.due_date__lte = date_to_drf_filter(filter.dueDate.to);
+      }
+      if (filter.privateUse !== null) {
+        if (filter.privateUse) {
+          params.bookkeeping = "p";
+        }
+        if (!filter.privateUse) {
+          params.bookkeeping = "k";
+        }
+      }
+
       loading.value = true;
       api
         .get("/api/invoice/invoice", {
-          params: {
-            search: filter,
-            pageSize: rowsPerPage,
-            pageNumber: page,
-          },
+          params,
         })
         .then((response) => {
           pagination.value.page = page;
@@ -316,6 +358,14 @@ export default {
       return due_date < now;
     }
 
+    function on_filters_update(filters) {
+      onRequest({
+        pagination: pagination.value,
+        filter: filter.value,
+        filter2: filters,
+      });
+    }
+
     onMounted(() => {
       // get initial data from server (1st page)
       onRequest({
@@ -339,6 +389,8 @@ export default {
       invoice_create_dialog,
       delete_confirmation_dialog,
 
+      distributor_filter,
+
       onRequest,
 
       active_invoice,
@@ -352,12 +404,14 @@ export default {
       is_overdue,
 
       distributor_id_to_name,
+      on_filters_update,
     };
   },
   components: {
     InvoiceEditCreateDialog,
     DeleteConfirmationDialog,
     InvoiceImportDialog,
+    InvoicesFiltersCard,
   },
 };
 </script>
