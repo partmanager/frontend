@@ -175,7 +175,7 @@ import { backendURL } from "src/boot/backend";
 import { distributor_id_to_name } from "src/boot/distributor_set";
 import { api_invoice_delete } from "boot/invoices_api.js";
 import { format_currency } from "boot/formaters.js";
-import InvoiceEditCreateDialog from "src/components/InvoiceEditCreateDialog.vue";
+import InvoiceEditCreateDialog from "src/components/dialogs/InvoiceEditCreateDialog.vue";
 import DeleteConfirmationDialog from "src/components/DeleteConfirmationDialog.vue";
 import InvoiceImportDialog from "src/components/dialogs/InvoiceImportDialog.vue";
 import InvoicesFiltersCard from "src/components/widgets/InvoicesFiltersCard.vue";

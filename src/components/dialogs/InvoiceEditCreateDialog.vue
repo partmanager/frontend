@@ -59,9 +59,23 @@
         </template>
       </q-input>
 
+      <div class="row">
+        <CurrencySelectWidget
+          v-model="exchange.currency"
+        ></CurrencySelectWidget>
+        <q-input
+          v-model="exchange.rate"
+          filled
+          label="Exchange Rate"
+          hint="Exchange rate"
+          dense
+        />
+      </div>
+
       <br />
 
       <q-checkbox v-model="paid" label="Paid" />
+      <q-checkbox v-model="isIncome" label="Income" />
 
       <br />
 
@@ -107,7 +121,10 @@
 <script>
 import { ref, defineComponent } from "vue";
 import { api } from "boot/axios";
-import DistributorSelect from "./widgets/DistributorSelect.vue";
+import { api_invoice_create } from "boot/invoices_api.js";
+import { get_currency_by_id } from "src/boot/choices.js";
+import DistributorSelect from "src/components/widgets/DistributorSelect.vue";
+import CurrencySelectWidget from "src/components/CurrencySelectWidget.vue";
 
 export default defineComponent({
   name: "InvoiceEditCreateDialog",
@@ -124,11 +141,13 @@ export default defineComponent({
   setup(props) {
     const date = ref();
     const due_date = ref();
-    const paid = ref();
+    const paid = ref(false);
+    const isIncome = ref(false);
     const file = ref();
     const note = ref();
     const distributor = ref();
     const invoice = ref({ number: null, date: null, note: null });
+    const exchange = ref({ currency: null, rate: null });
 
     function validate() {
       return true;
@@ -151,8 +170,11 @@ export default defineComponent({
       formData.append("invoice_date", data.invoice_date);
       formData.append("due_date", data.due_date);
       formData.append("paid", data.paid);
+      formData.append("is_income", isIncome.value);
       formData.append("note", data.note);
       formData.append("distributor", data.distributor);
+      formData.append("currency", exchange.value.currency.value);
+      formData.append("price_exchange_rate", exchange.value.rate);
       return formData;
     }
 
@@ -172,16 +194,11 @@ export default defineComponent({
             });
         } else {
           const formData = fields_to_api_form_data();
-          api
-            .post(`/api/invoice/invoice`, formData, {
-              headers: { "Content-Type": "multipart/form-data" },
-            })
-            .then((response) => {})
-            .finally(() => {
-              if (props.onsave) {
-                props.onsave(invoice);
-              }
-            });
+          api_invoice_create(formData).finally(() => {
+            if (props.onsave) {
+              props.onsave(invoice);
+            }
+          });
         }
       }
     }
@@ -197,9 +214,15 @@ export default defineComponent({
             date.value = response.data.invoice_date;
             due_date.value = response.data.due_date;
             paid.value = response.data.paid;
+            isIncome.value = response.data.is_income;
             note.value = response.data.note;
 
             distributor.value = response.data.distributor;
+
+            exchange.value.currency = get_currency_by_id(
+              response.data.currency
+            );
+            exchange.value.rate = response.data.price_exchange_rate;
           });
       }
     }
@@ -208,15 +231,17 @@ export default defineComponent({
       date,
       due_date,
       paid,
+      isIncome,
       file,
       note,
       distributor,
       invoice,
+      exchange,
 
       load_invoice_data,
       validate_and_submit,
     };
   },
-  components: { DistributorSelect },
+  components: { DistributorSelect, CurrencySelectWidget },
 });
 </script>

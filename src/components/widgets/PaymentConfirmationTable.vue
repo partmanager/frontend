@@ -42,6 +42,7 @@
       v-model="payment_confirmation_dialog"
       :invoice_id="props.invoice_id"
       :paymentConfirmation_id="active_paymentConfirmation.id"
+      @onUpdated="onPaymentConfirmationUpdated"
     ></PaymentConfirmationEditCreateDialog>
 
     <delete-confirmation-dialog
@@ -150,6 +151,11 @@ export default defineComponent({
       payment_confirmation_dialog.value = true;
     }
 
+    function onPaymentConfirmationUpdated() {
+      payment_confirmation_dialog.value = false;
+      onPaymentConfirmationRequest();
+    }
+
     function delete_payment_confirmation(row) {
       active_paymentConfirmation.value = row;
       delete_confirmation_dialog.value = true;
@@ -177,6 +183,7 @@ export default defineComponent({
 
       payment_confirmation_dialog,
       edit_paymentConfirmation,
+      onPaymentConfirmationUpdated,
 
       delete_confirmation_dialog,
       delete_payment_confirmation,

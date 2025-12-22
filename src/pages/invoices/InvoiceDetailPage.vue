@@ -33,6 +33,11 @@
               <q-item-label
                 >Paid:
                 <strong>{{ invoice.paid ? "Yes" : "No" }}</strong></q-item-label
+              ><q-item-label
+                >Income:
+                <strong>{{
+                  invoice.isIncome ? "Yes" : "No"
+                }}</strong></q-item-label
               >
             </div>
 
@@ -211,6 +216,7 @@
     ></InvoiceItemEditCreateDialog>
 
     <InvoiceItemEditCreateDialog
+      v-if="active_invoice_item"
       v-model="invoice_item_edit_dialog"
       :invoice="invoice"
       :invoice_item_initial_data="active_invoice_item"
@@ -257,8 +263,8 @@ import {
   api_invoice_item_delete,
 } from "boot/invoices_api.js";
 import PaymentConfirmationTable from "src/components/widgets/PaymentConfirmationTable.vue";
-import InvoiceEditCreateDialog from "src/components/InvoiceEditCreateDialog.vue";
-import InvoiceItemEditCreateDialog from "src/components/InvoiceItemEditCreateDialog.vue";
+import InvoiceEditCreateDialog from "src/components/dialogs/InvoiceEditCreateDialog.vue";
+import InvoiceItemEditCreateDialog from "src/components/dialogs/InvoiceItemEditCreateDialog.vue";
 import PaymentConfirmationEditCreateDialog from "src/components/dialogs/PaymentConfirmationEditCreateDialog.vue";
 import DeleteConfirmationDialog from "src/components/DeleteConfirmationDialog.vue";
 
@@ -282,6 +288,12 @@ const columns = [
     align: "left",
     field: "bookkeeping",
     format: format_bookkeeping,
+  },
+  {
+    name: "description",
+    label: "Description",
+    align: "left",
+    field: "description",
   },
   {
     name: "distributor_order_number",
@@ -359,6 +371,11 @@ const columns = [
     label: "TAX Rate",
     field: "extended_price",
     format: (v) => v.vat_tax + "%",
+  },
+  {
+    name: "serial_number",
+    label: "Serial Number",
+    field: "serial_number",
   },
   {
     name: "lot_number",
@@ -501,16 +518,20 @@ export default {
     function on_invoice_item_created() {
       invoice_item_create_dialog.value = false;
       load_invoice_items();
+      load_invoice_data();
     }
 
     function update_invoice_item(data) {
       invoice_item_edit_dialog.value = false;
       load_invoice_items();
+      load_invoice_data();
     }
 
     function delete_invoice_item(data) {
       active_invoice_item.value = data;
       delete_confirmation_dialog.value = true;
+      load_invoice_items();
+      load_invoice_data();
     }
 
     function api_call_delete_invoice_item() {
@@ -561,19 +582,20 @@ export default {
         .get(`/api/invoice/invoice/${id}`)
         .then((response) => {
           invoice.value.id = response.data.id;
-          invoice.value.distributor = response.data.distributor;
           invoice.value.number = response.data.number;
+          invoice.value.isIncome = response.data.is_income;
           invoice.value.date = response.data.invoice_date;
           invoice.value.due_date = response.data.due_date;
-          invoice.value.paid = response.data.paid;
-          invoice.value.price = response.data.price;
-          invoice.value.note = response.data.note;
+          invoice.value.distributor = response.data.distributor;
           invoice.value.invoice_file = response.data.invoice_file;
+          invoice.value.currency = response.data.currency;
+          invoice.value.price = response.data.price;
+          invoice.value.paid = response.data.paid;
+          invoice.value.paidDate = response.data.paid_date;
+          invoice.value.note = response.data.note;
+
           invoice.value.payment_confirmation_file =
             response.data.payment_confirmation_file;
-
-          load_invoice_items();
-          load_paymentConfirmations();
         })
         .finally(() => {
           loading.value = false;
@@ -582,6 +604,8 @@ export default {
 
     onMounted(() => {
       load_invoice_data();
+      load_invoice_items();
+      load_paymentConfirmations();
     });
 
     return {

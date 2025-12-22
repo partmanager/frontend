@@ -124,13 +124,26 @@ export default {
       });
     }
 
+    function date_to_drf(date) {
+      if (date) {
+        const [month, day, year] = [
+          date.getMonth(),
+          date.getDate(),
+          date.getFullYear(),
+        ];
+        return `${year}-${month + 1}-${day}`;
+      } else {
+        return null;
+      }
+    }
+
     function fields_to_form_data() {
       let formData = new FormData();
       formData.append("invoice", props.invoice_id);
       if (paymentFile.value) {
         formData.append("confirmation_file", paymentFile.value);
       }
-      formData.append("payment_date", date.value);
+      formData.append("payment_date", date_to_drf(new Date(date.value)));
       formData.append("value_net", paymentAmount.value);
       formData.append("value_currency", currency.value.value);
       formData.append("payment_method", paymentMethod.value.value);

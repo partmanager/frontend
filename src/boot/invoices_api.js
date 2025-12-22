@@ -2,6 +2,27 @@ import { api } from "./axios";
 import { ref } from "vue";
 import { Notify } from "quasar";
 
+function api_invoice_create(formData) {
+  return api
+    .post("/api/invoice/invoice/", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    .then((response) => {
+      Notify.create({
+        color: "positive",
+        message: "Invoice created successfully",
+      });
+    })
+    .catch(() => {
+      Notify.create({
+        color: "negative",
+        position: "top",
+        message: "Unable to create Invoice",
+        icon: "report_problem",
+      });
+    });
+}
+
 function api_invoice_delete(id, router = null) {
   return api
     .delete(`/api/invoice/invoice/${id}/`)
@@ -21,6 +42,28 @@ function api_invoice_delete(id, router = null) {
         message: "Unable to delete invoice",
         icon: "report_problem",
       });
+    });
+}
+
+function api_invoice_item_create(formData) {
+  return api
+    .post("/api/invoice/item/", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    .then((response) => {
+      Notify.create({
+        color: "positive",
+        message: "Invoice Item created successfully",
+      });
+    })
+    .catch((error) => {
+      Notify.create({
+        color: "negative",
+        position: "top",
+        message: "Unable to create Invoice Item",
+        icon: "report_problem",
+      });
+      console.log("Problem submitting New Invoice Item", error);
     });
 }
 
@@ -105,7 +148,9 @@ function api_invoice_paymentConfirmation_delete(id) {
 }
 
 export {
+  api_invoice_create,
   api_invoice_delete,
+  api_invoice_item_create,
   api_invoice_item_delete,
   api_invoice_paymentConfirmation_create,
   api_invoice_paymentConfirmation_update,

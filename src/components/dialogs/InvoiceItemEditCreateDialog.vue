@@ -10,21 +10,35 @@
         <div class="text-negative">Error: {{ backendError }}</div>
       </q-card-section>
 
-      <q-card-section>
-        <q-input
-          v-model="invoice_item.position"
-          filled
-          label="Position"
-          hint="Item position in invoice"
-          type="number"
-          dense
-        />
+      <q-card-section class="q-gutter-md">
+        <div class="row">
+          <q-input
+            v-model="invoice_item.position"
+            class="col-4"
+            filled
+            label="Position"
+            hint="Item position in invoice"
+            type="number"
+            dense
+          />
+
+          <q-input
+            v-model="invoice_item.order_number"
+            class="col-8"
+            filled
+            label="Order Number"
+            hint="Item order number"
+            dense
+          />
+        </div>
 
         <q-input
-          v-model="invoice_item.order_number"
+          v-model="invoice_item.description"
           filled
-          label="Order Number"
-          hint="Item order number"
+          label="Description"
+          hint="Description"
+          type="text_area"
+          autogrow
           dense
         />
 
@@ -36,6 +50,7 @@
         <div class="row">
           <q-input
             v-model="invoice_item.qty_ordered"
+            class="col-md-3"
             filled
             label="Quantity Ordered"
             hint="Quantity Ordered"
@@ -45,6 +60,7 @@
 
           <q-input
             v-model="invoice_item.qty_shipped"
+            class="col-md-3"
             filled
             label="Quantity Shipped"
             hint="Quantity Shipped"
@@ -54,6 +70,7 @@
 
           <q-input
             v-model="invoice_item.qty_delivered"
+            class="col-md-3"
             filled
             label="Quantity Delivered"
             hint="Quantity Delivered"
@@ -61,7 +78,10 @@
             dense
           />
 
-          <quantity-unit-widget v-model="invoice_item.qty_unit">
+          <quantity-unit-widget
+            v-model="invoice_item.qty_unit"
+            class="col-md-3"
+          >
           </quantity-unit-widget>
         </div>
         <div class="row">
@@ -85,12 +105,14 @@
 
           <currency-select-widget
             v-model="invoice_item.price_currency"
+            class="col-3"
           ></currency-select-widget>
         </div>
 
         <div class="row">
           <q-select
             v-model="item_type_model"
+            class="col-4"
             filled
             label="Item type"
             hint="Item type"
@@ -105,34 +127,51 @@
           ></bookkeeping-type-widget>
         </div>
 
-        <q-input
-          v-model="invoice_item.lot_number"
-          filled
-          label="LOT number"
-          hint="LOT number"
-          dense
-        />
-        <q-input
-          v-model="invoice_item.ECCN"
-          filled
-          label="ECCN"
-          hint="ECCN"
-          dense
-        />
-        <q-input
-          v-model="invoice_item.TARIC"
-          filled
-          label="TARIC"
-          hint="TARIC"
-          dense
-        />
-        <q-input
-          v-model="invoice_item.COO"
-          filled
-          label="COO"
-          hint="Country of origin"
-          dense
-        />
+        <div class="row">
+          <q-input
+            v-model="invoice_item.serial_number"
+            class="col-6"
+            filled
+            label="Serial number"
+            hint="Item Serial number"
+            dense
+          />
+          <q-input
+            v-model="invoice_item.lot_number"
+            class="col-6"
+            filled
+            label="LOT number"
+            hint="Item LOT number"
+            dense
+          />
+        </div>
+
+        <div class="row">
+          <q-input
+            v-model="invoice_item.ECCN"
+            class="col-4"
+            filled
+            label="ECCN"
+            hint="ECCN"
+            dense
+          />
+          <q-input
+            v-model="invoice_item.TARIC"
+            class="col-4"
+            filled
+            label="TARIC"
+            hint="TARIC"
+            dense
+          />
+          <q-input
+            v-model="invoice_item.COO"
+            class="col-4"
+            filled
+            label="COO"
+            hint="Country of origin"
+            dense
+          />
+        </div>
       </q-card-section>
 
       <q-separator />
@@ -158,10 +197,10 @@ import {
   get_quantity_unit_by_id,
   get_currency_by_id,
 } from "src/boot/choices.js";
-import QuantityUnitWidget from "./QuantityUnitWidget.vue";
-import CurrencySelectWidget from "./CurrencySelectWidget.vue";
-import DistributorOrderNumberSelect from "./widgets/DistributorOrderNumberSelect.vue";
-import BookkeepingTypeWidget from "./widgets/BookkeepingTypeWidget.vue";
+import QuantityUnitWidget from "src/components/QuantityUnitWidget.vue";
+import CurrencySelectWidget from "src/components/CurrencySelectWidget.vue";
+import DistributorOrderNumberSelect from "src/components/widgets/DistributorOrderNumberSelect.vue";
+import BookkeepingTypeWidget from "src/components/widgets//BookkeepingTypeWidget.vue";
 
 const merchandise_type = [
   { name: "Part", id: 1 },
@@ -210,6 +249,7 @@ export default defineComponent({
       order_number: null,
       item_type: null,
       position: null,
+      description: null,
       invoice_id: null,
       don: null,
       qty_ordered: null,
@@ -220,11 +260,13 @@ export default defineComponent({
       price_vat_tax: 23,
       price_currency: null,
       bookkeeping_type: null,
+      serial_number: null,
       lot_number: null,
       ECCN: null,
       TARIC: null,
       COO: null,
     });
+
     const backendError = ref();
     const invoice_item_don_model = ref();
 
@@ -235,15 +277,18 @@ export default defineComponent({
           .then((response) => {
             invoice_item.value.position = response.data.position_in_invoice;
             invoice_item.value.order_number = response.data.order_number;
+            invoice_item.value.description = response.data.description;
             invoice_item.value.item_type = response.data.type;
             // invoice_item.value.don = response.data.distributor_order_number;
             invoice_item.value.qty_ordered = response.data.ordered_quantity;
             invoice_item.value.qty_shipped = response.data.shipped_quantity;
-            invoice_item.value.qty_delivered = response.data.shipped_delivered;
+            invoice_item.value.qty_delivered = response.data.delivered_quantity;
             invoice_item.value.qty_unit = get_quantity_unit_by_id(
               response.data.quantity_unit
             );
             invoice_item.value.price_value = response.data.extended_price.net;
+            invoice_item.value.price_vat_tax =
+              response.data.extended_price.vat_tax;
             invoice_item.value.price_currency = get_currency_by_id(
               response.data.extended_price.currency
             );
@@ -253,6 +298,7 @@ export default defineComponent({
             invoice_item.value.bookkeeping_type = bookkeping_type.filter(
               (value) => value.value == response.data.bookkeeping
             )[0];
+            invoice_item.value.serial_number = response.data.serial_number;
             invoice_item.value.lot_number = response.data.LOT;
             invoice_item.value.ECCN = response.data.ECCN;
             invoice_item.value.TARIC = response.data.TARIC;
@@ -267,7 +313,34 @@ export default defineComponent({
                 // filtered_don_set.value = response.data.results;
               });
           });
+      } else {
+        reset_data();
       }
+    }
+
+    function reset_data() {
+      invoice_item.value.position = null;
+      invoice_item.value.order_number = null;
+      invoice_item.value.description = null;
+      invoice_item.value.item_type = null;
+      invoice_item.value.qty_ordered = null;
+      invoice_item.value.qty_shipped = null;
+      invoice_item.value.qty_delivered = null;
+      invoice_item.value.qty_unit = null;
+      invoice_item.value.price_value = null;
+      invoice_item.value.price_vat_tax = 23;
+      invoice_item.value.price_currency = get_currency_by_id(
+        props.invoice.currency
+      );
+      item_type_model.value = null;
+      invoice_item.value.bookkeeping_type = null;
+      invoice_item.value.serial_number = null;
+      invoice_item.value.lot_number = null;
+      invoice_item.value.ECCN = null;
+      invoice_item.value.TARIC = null;
+      invoice_item.value.COO = null;
+
+      invoice_item.value.don = null;
     }
 
     function validate_and_submit() {
@@ -287,6 +360,7 @@ export default defineComponent({
         order_number: invoice_item.value.order_number,
         type: item_type_model.value.id,
         position_in_invoice: invoice_item.value.position,
+        description: invoice_item.value.description,
         // distributor_number: invoice_item.value.don,
         ordered_quantity: invoice_item.value.qty_ordered,
         shipped_quantity: invoice_item.value.qty_shipped,
@@ -295,6 +369,7 @@ export default defineComponent({
         price_net: invoice_item.value.price_value,
         price_vat_tax: invoice_item.value.price_vat_tax,
         price_currency: invoice_item.value.price_currency.value,
+        serial_number: invoice_item.value.serial_number,
         LOT: invoice_item.value.lot_number,
         ECCN: invoice_item.value.ECCN,
         COO: invoice_item.value.COO,
