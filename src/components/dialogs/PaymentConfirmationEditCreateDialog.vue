@@ -11,29 +11,41 @@
         <div class="row q-gutter-sm">
           <q-input
             v-model="paymentAmount"
+            class="col"
             label="Payment Amount"
-            type="number"
+            mask="#.##"
+            fill-mask="0"
+            reverse-fill-mask
             dense
             filled
           />
 
-          <currency-select-widget v-model="currency"></currency-select-widget>
+          <currency-select-widget
+            ref="paymentCurrencyRef"
+            v-model="currency"
+            class="col"
+            :rules="[(val) => !!val || 'Field is required']"
+          ></currency-select-widget>
         </div>
 
         <DateInputWidget
+          ref="paymentDateRef"
           v-model="date"
-          label="Payment Date"
+          label="Payment date YYYY-MM-DD"
+          hint="Payment date YYYY-MM-DD"
           filled
-          hint="Payment Date"
           dense
+          :rules="[(val) => !!val || 'Field is required']"
         ></DateInputWidget>
 
         <q-select
+          ref="paymentMethodRef"
           v-model="paymentMethod"
           :options="paymentTypeOptions"
-          label="Payment Type"
+          label="Payment Method"
           filled
           dense
+          :rules="[(val) => !!val || 'Field is required']"
         />
 
         <q-input v-model="note" type="textarea" filled autogrow label="Note" />
@@ -94,13 +106,25 @@ export default {
   },
   emits: ["onCreated", "onUpdated"],
   setup(props, ctx) {
+    const paymentCurrencyRef = ref(null);
+    const paymentDateRef = ref(null);
+    const paymentMethodRef = ref(null);
+
     const date = ref();
     const currency = ref();
     const paymentAmount = ref();
     const paymentFile = ref();
     const paymentMethod = ref();
-    const note = ref();
+    const note = ref(null);
     const loading = ref(false);
+
+    function validate() {
+      let valid = true;
+      valid &= paymentCurrencyRef.value.validate();
+      valid &= paymentDateRef.value.validate();
+      valid &= paymentMethodRef.value.validate();
+      return valid;
+    }
 
     function on_save() {
       if (props.paymentConfirmation_id) {
@@ -111,17 +135,21 @@ export default {
     }
 
     function validate_and_create() {
-      const formData = fields_to_form_data();
-      api_invoice_paymentConfirmation_create(formData).finally(() => {
-        ctx.emit("onCreated");
-      });
+      if (validate()) {
+        const formData = fields_to_form_data();
+        api_invoice_paymentConfirmation_create(formData).finally(() => {
+          ctx.emit("onCreated");
+        });
+      }
     }
 
     function validate_and_update(id) {
-      const formData = fields_to_form_data();
-      api_invoice_paymentConfirmation_update(id, formData).finally(() => {
-        ctx.emit("onUpdated");
-      });
+      if (validate()) {
+        const formData = fields_to_form_data();
+        api_invoice_paymentConfirmation_update(id, formData).finally(() => {
+          ctx.emit("onUpdated");
+        });
+      }
     }
 
     function date_to_drf(date) {
@@ -163,10 +191,16 @@ export default {
             `/api/invoice/paymentConfirmation/${props.paymentConfirmation_id}/`
           )
           .then((response) => {
-            date.value = response.data.date;
+            date.value = response.data.payment_date;
             currency.value = get_currency_by_id(response.data.value_currency);
-            paymentAmount.value = response.data.value_net;
-            paymentFile.value = new File([], response.data.confirmation_file);
+            paymentAmount.value = parseFloat(response.data.value_net).toFixed(
+              2
+            );
+            if (response.data.confirmation_file) {
+              paymentFile.value = new File([], response.data.confirmation_file);
+            } else {
+              paymentFile.value = null;
+            }
             paymentMethod.value = get_paymentMethod_by_id(
               response.data.payment_method
             );
@@ -179,6 +213,10 @@ export default {
     }
 
     return {
+      paymentCurrencyRef,
+      paymentDateRef,
+      paymentMethodRef,
+
       currency,
       date,
       paymentAmount,

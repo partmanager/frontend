@@ -23,6 +23,27 @@ function api_invoice_create(formData) {
     });
 }
 
+function api_invoice_update(id, formData) {
+  return api
+    .put(`/api/invoice/invoice/${id}/`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    .then((response) => {
+      Notify.create({
+        color: "positive",
+        message: "Invoice updated successfully",
+      });
+    })
+    .catch(() => {
+      Notify.create({
+        color: "negative",
+        position: "top",
+        message: "Unable to update invoice",
+        icon: "report_problem",
+      });
+    });
+}
+
 function api_invoice_delete(id, router = null) {
   return api
     .delete(`/api/invoice/invoice/${id}/`)
@@ -149,6 +170,7 @@ function api_invoice_paymentConfirmation_delete(id) {
 
 export {
   api_invoice_create,
+  api_invoice_update,
   api_invoice_delete,
   api_invoice_item_create,
   api_invoice_item_delete,

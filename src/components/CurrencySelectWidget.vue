@@ -1,8 +1,9 @@
 <template>
   <q-select
+    ref="currencySelectRef"
+    v-model="currency_model"
     label="Currency"
     hint="Currency"
-    v-model="currency_model"
     option-label="label"
     :options="currency_options"
     @filter="filter_currency_select"
@@ -23,6 +24,7 @@ const all_currency_set = currency_set;
 
 export default defineComponent({
   setup() {
+    const currencySelectRef = ref(null);
     const currency_model = ref();
     const currency_options = ref();
 
@@ -46,6 +48,7 @@ export default defineComponent({
     }
 
     return {
+      currencySelectRef,
       currency_model,
       currency_options,
 
@@ -53,6 +56,11 @@ export default defineComponent({
         return filterFn(val, update, abort, currency_options, all_currency_set);
       },
     };
+  },
+  methods: {
+    validate() {
+      return this.$refs.currencySelectRef.validate();
+    },
   },
 });
 </script>

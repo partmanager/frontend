@@ -1,7 +1,7 @@
 <template>
   <q-select
+    ref="bookkepingRef"
     label="Bookkeeping type"
-    hint="Bookkeeping type"
     v-model="bookkeping_type"
     option-label="label"
     :options="bookkeping_type_options"
@@ -9,8 +9,6 @@
     use-input
     fill-input
     hide-selected
-    dense
-    filled
   />
 </template>
 
@@ -27,6 +25,7 @@ const all_bookkeping_type_set = [
 
 export default defineComponent({
   setup() {
+    const bookkepingRef = ref(null);
     const bookkeping_type = ref();
     const bookkeping_type_options = ref(all_bookkeping_type_set);
 
@@ -50,6 +49,8 @@ export default defineComponent({
     }
 
     return {
+      bookkepingRef,
+
       bookkeping_type,
       bookkeping_type_options,
 
@@ -63,6 +64,11 @@ export default defineComponent({
         );
       },
     };
+  },
+  methods: {
+    validate() {
+      return this.$refs.bookkepingRef.validate();
+    },
   },
 });
 </script>

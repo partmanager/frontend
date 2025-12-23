@@ -7,100 +7,127 @@
 
       <q-separator />
 
-      <q-input
-        v-model="invoice.number"
-        filled
-        label="Number"
-        hint="Invoice number"
-        dense
-      />
-
-      <q-input filled v-model="date" label="Date" hint="Invoice Date" dense>
-        <template v-slot:append>
-          <q-icon name="event" class="cursor-pointer">
-            <q-popup-proxy
-              cover
-              transition-show="scale"
-              transition-hide="scale"
-            >
-              <q-date v-model="date" mask="YYYY-MM-DD">
-                <div class="row items-center justify-end">
-                  <q-btn v-close-popup label="Close" color="primary" flat />
-                </div>
-              </q-date>
-            </q-popup-proxy>
-          </q-icon>
-        </template>
-      </q-input>
-
-      <br />
-
-      <q-input
-        filled
-        v-model="due_date"
-        label="Due date"
-        hint="Invoice Due Date"
-        dense
-      >
-        <template v-slot:append>
-          <q-icon name="event" class="cursor-pointer">
-            <q-popup-proxy
-              cover
-              transition-show="scale"
-              transition-hide="scale"
-            >
-              <q-date v-model="due_date" mask="YYYY-MM-DD">
-                <div class="row items-center justify-end">
-                  <q-btn v-close-popup label="Close" color="primary" flat />
-                </div>
-              </q-date>
-            </q-popup-proxy>
-          </q-icon>
-        </template>
-      </q-input>
-
-      <div class="row">
-        <CurrencySelectWidget
-          v-model="exchange.currency"
-        ></CurrencySelectWidget>
+      <q-card-section>
         <q-input
-          v-model="exchange.rate"
+          ref="numberRef"
+          v-model="invoice.number"
+          class="col"
           filled
-          label="Exchange Rate"
-          hint="Exchange rate"
+          label="Number"
+          hint="Invoice number"
+          :rules="[(val) => !!val || 'Invoice number is required']"
           dense
         />
-      </div>
 
-      <br />
+        <br />
 
-      <q-checkbox v-model="paid" label="Paid" />
-      <q-checkbox v-model="isIncome" label="Income" />
+        <div class="row q-gutter-md">
+          <DateInputWidtet
+            ref="invoiceDateRef"
+            v-model="invoice.date"
+            class="col"
+            label="Invoice Date YYYY-MM-DD"
+            hint="Invoice Date YYYY-MM-DD"
+            filled
+            dense
+            :rules="[(val) => !!val || 'Field is required']"
+          ></DateInputWidtet>
 
-      <br />
+          <DateInputWidtet
+            ref="dueDateRef"
+            v-model="invoice.due_date"
+            class="col"
+            label="Due date YYYY-MM-DD"
+            hint="Invoice Due Date YYYY-MM-DD"
+            filled
+            dense
+            :rules="[(val) => !!val || 'Field is required']"
+          ></DateInputWidtet>
+        </div>
 
-      <DistributorSelect
-        v-model="distributor"
-        ref="distributor_ref"
-      ></DistributorSelect>
-      <br />
+        <br />
 
-      <q-file
-        v-model="file"
-        filled
-        label="Invoice file"
-        hint="Invoice file"
-        dense
-      />
+        <div class="row q-gutter-md">
+          <q-input
+            ref="amountNetRef"
+            v-model="amount.net"
+            class="col"
+            label="Total amount net"
+            hint="Total amount net"
+            mask="#.##"
+            fill-mask="0"
+            reverse-fill-mask
+            filled
+            dense
+          />
+          <q-input
+            ref="amountGrossRef"
+            v-model="amount.gross"
+            class="col"
+            filled
+            label="Total amount gross"
+            hint="Total amount gross"
+            mask="#.##"
+            fill-mask="0"
+            reverse-fill-mask
+            dense
+          />
+          <CurrencySelectWidget
+            ref="amountCurrencyRef"
+            v-model="amount.currency"
+            class="col"
+            :rules="[(val) => !!val || 'Field is required']"
+          ></CurrencySelectWidget>
+        </div>
+        <br />
+        <div class="row">
+          <q-input
+            v-if="
+              amount.currency && amount.currency.value != localCurrency.value
+            "
+            v-model="exchange_rate"
+            :prefix="`1 ${amount.currency.label} =`"
+            :suffix="localCurrency.label"
+            filled
+            label="Exchange Rate"
+            hint="Exchange rate"
+            dense
+            :rules="[(val) => !!val || 'Field is required']"
+          />
+        </div>
 
-      <q-input
-        v-model="note"
-        type="textarea"
-        filled
-        autogrow
-        label="Note"
-        :value="invoice.note"
-      />
+        <br />
+        <div class="row">
+          <q-checkbox v-model="paid" label="Paid" />
+          <q-checkbox v-model="isIncome" label="Income" />
+        </div>
+
+        <br />
+
+        <DistributorSelect
+          ref="distributorRef"
+          v-model="distributor"
+          :rules="[(val) => !!val || 'Field is required']"
+        ></DistributorSelect>
+        <br />
+
+        <q-file
+          v-model="file"
+          label="Invoice file"
+          hint="Invoice file"
+          clearable
+          filled
+          dense
+        />
+
+        <q-input
+          v-model="invoice.note"
+          type="textarea"
+          filled
+          autogrow
+          label="Note"
+        />
+      </q-card-section>
 
       <q-separator />
 
@@ -121,8 +148,9 @@
 <script>
 import { ref, defineComponent } from "vue";
 import { api } from "boot/axios";
-import { api_invoice_create } from "boot/invoices_api.js";
+import { api_invoice_create, api_invoice_update } from "boot/invoices_api.js";
 import { get_currency_by_id } from "src/boot/choices.js";
+import DateInputWidtet from "src/components/widgets/DateInputWidget.vue";
 import DistributorSelect from "src/components/widgets/DistributorSelect.vue";
 import CurrencySelectWidget from "src/components/CurrencySelectWidget.vue";
 
@@ -139,42 +167,64 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const date = ref();
-    const due_date = ref();
+    const numberRef = ref(null);
+    const invoiceDateRef = ref(null);
+    const dueDateRef = ref(null);
+    const amountNetRef = ref(null);
+    const amountGrossRef = ref(null);
+    const amountCurrencyRef = ref(null);
+    const distributorRef = ref(null);
+
+    const localCurrency = get_currency_by_id(3);
     const paid = ref(false);
     const isIncome = ref(false);
     const file = ref();
-    const note = ref();
     const distributor = ref();
-    const invoice = ref({ number: null, date: null, note: null });
-    const exchange = ref({ currency: null, rate: null });
+    const invoice = ref({
+      number: null,
+      date: null,
+      due_date: null,
+      note: null,
+    });
+    const exchange_rate = ref(null);
+    const amount = ref({ net: null, gross: null, currency: null });
+    const invoiceFileUrl = ref(null);
+    const previousInvoiceFile = ref(null);
 
     function validate() {
-      return true;
+      let validated = true;
+      validated &= numberRef.value.validate();
+      validated &= invoiceDateRef.value.validate();
+      validated &= dueDateRef.value.validate();
+      validated &= amountNetRef.value.validate();
+      validated &= amountGrossRef.value.validate();
+      validated &= amountCurrencyRef.value.validate();
+      validated &= distributorRef.value.validate();
+      return validated;
     }
 
     function fields_to_api_form_data() {
-      const data = {
-        number: invoice.value.number,
-        invoice_date: date.value,
-        due_date: due_date.value,
-        paid: paid.value,
-        note: note.value,
-        distributor: distributor.value.id,
-      };
-      let formData = new FormData();
-      if (file.value) {
-        formData.append("invoice_file", file.value);
+      if (amount.value.currency.value == localCurrency.value) {
+        exchange_rate.value = 1;
       }
-      formData.append("number", data.number);
-      formData.append("invoice_date", data.invoice_date);
-      formData.append("due_date", data.due_date);
-      formData.append("paid", data.paid);
+
+      let formData = new FormData();
+
+      formData.append("number", invoice.value.number);
+      formData.append("invoice_date", invoice.value.date);
+      formData.append("due_date", invoice.value.due_date);
+      formData.append("paid", paid.value);
       formData.append("is_income", isIncome.value);
-      formData.append("note", data.note);
-      formData.append("distributor", data.distributor);
-      formData.append("currency", exchange.value.currency.value);
-      formData.append("price_exchange_rate", exchange.value.rate);
+      formData.append("distributor", distributor.value.id);
+      formData.append("price_net", amount.value.net);
+      formData.append("price_gross", amount.value.gross);
+      formData.append("price_currency", amount.value.currency.value);
+      formData.append("price_exchange_rate", exchange_rate.value);
+
+      if (invoice.value.note) formData.append("note", invoice.value.note);
+      if (file.value != previousInvoiceFile.value)
+        formData.append("invoice_file", file.value);
+
       return formData;
     }
 
@@ -182,16 +232,11 @@ export default defineComponent({
       if (validate()) {
         if (props.id_to_edit) {
           const formData = fields_to_api_form_data();
-          api
-            .put(`/api/invoice/invoice/${props.id_to_edit}/`, formData, {
-              headers: { "Content-Type": "multipart/form-data" },
-            })
-            .then((response) => {})
-            .finally(() => {
-              if (props.onsave) {
-                props.onsave(invoice);
-              }
-            });
+          api_invoice_update(props.id_to_edit, formData).finally(() => {
+            if (props.onsave) {
+              props.onsave(invoice);
+            }
+          });
         } else {
           const formData = fields_to_api_form_data();
           api_invoice_create(formData).finally(() => {
@@ -210,38 +255,64 @@ export default defineComponent({
           .then((response) => {
             invoice.value.number = response.data.number;
             invoice.value.date = response.data.invoice_date;
+            invoice.value.due_date = response.data.due_date;
 
-            date.value = response.data.invoice_date;
-            due_date.value = response.data.due_date;
             paid.value = response.data.paid;
             isIncome.value = response.data.is_income;
-            note.value = response.data.note;
+            invoice.value.note = response.data.note;
 
             distributor.value = response.data.distributor;
 
-            exchange.value.currency = get_currency_by_id(
-              response.data.currency
+            amount.value.net = parseFloat(response.data.price.net).toFixed(2);
+            amount.value.gross = parseFloat(response.data.price.gross).toFixed(
+              2
             );
-            exchange.value.rate = response.data.price_exchange_rate;
+            amount.value.currency = get_currency_by_id(
+              response.data.price.currency
+            );
+
+            exchange_rate.value = response.data.price_exchange_rate;
+
+            if (response.data.invoice_file) {
+              invoiceFileUrl.value = new URL(response.data.invoice_file);
+              previousInvoiceFile.value = new File(
+                [],
+                invoiceFileUrl.value.pathname.split("/").pop()
+              );
+
+              file.value = previousInvoiceFile.value;
+            } else {
+              previousInvoiceFile.value = null;
+              invoiceFileUrl.value = null;
+              file.value = null;
+            }
           });
       }
     }
 
     return {
-      date,
-      due_date,
+      numberRef,
+      invoiceDateRef,
+      dueDateRef,
+      amountNetRef,
+      amountGrossRef,
+      amountCurrencyRef,
+      distributorRef,
+
+      localCurrency,
+
       paid,
       isIncome,
       file,
-      note,
       distributor,
       invoice,
-      exchange,
+      exchange_rate,
+      amount,
 
       load_invoice_data,
       validate_and_submit,
     };
   },
-  components: { DistributorSelect, CurrencySelectWidget },
+  components: { DistributorSelect, CurrencySelectWidget, DateInputWidtet },
 });
 </script>

@@ -8,6 +8,17 @@
       :visible-columns="visibleColumns"
       @request="onPaymentConfirmationRequest"
     >
+      <template v-slot:top>
+        <div class="q-gutter-sm row">
+          <div class="q-table__title">Payment Confirmation</div>
+          <q-btn
+            color="primary"
+            label="Add Payment Confirmation"
+            title="Add Payment Confirmation"
+            @click="payment_confirmation_create_dialog = true"
+          />
+        </div>
+      </template>
       <template v-slot:body-cell-action="props">
         <q-td :props="props">
           <div class="q-gutter-sm">
@@ -36,6 +47,12 @@
           </div>
         </q-td> </template
     ></q-table>
+
+    <PaymentConfirmationEditCreateDialog
+      v-model="payment_confirmation_create_dialog"
+      :invoice_id="props.invoice_id"
+      @onCreated="on_paymentConfirmation_created"
+    ></PaymentConfirmationEditCreateDialog>
 
     <PaymentConfirmationEditCreateDialog
       v-if="active_paymentConfirmation"
@@ -123,6 +140,7 @@ export default defineComponent({
     const rows = ref([]);
     const loading = ref(false);
     const active_paymentConfirmation = ref();
+    const payment_confirmation_create_dialog = ref(false);
     const payment_confirmation_dialog = ref(false);
     const delete_confirmation_dialog = ref(false);
 
@@ -144,6 +162,11 @@ export default defineComponent({
             loading.value = false;
           });
       }
+    }
+
+    function on_paymentConfirmation_created() {
+      payment_confirmation_create_dialog.value = false;
+      onPaymentConfirmationRequest();
     }
 
     function edit_paymentConfirmation(row) {
@@ -180,6 +203,9 @@ export default defineComponent({
       rows,
       loading,
       active_paymentConfirmation,
+
+      payment_confirmation_create_dialog,
+      on_paymentConfirmation_created,
 
       payment_confirmation_dialog,
       edit_paymentConfirmation,

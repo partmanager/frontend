@@ -19,25 +19,39 @@
               <q-item-label
                 >Due date: <strong>{{ invoice.due_date }}</strong></q-item-label
               >
+              <q-item-label
+                >Income:
+                <strong>{{
+                  invoice.isIncome ? "Yes" : "No"
+                }}</strong></q-item-label
+              >
               <p>
                 <a :href="invoice.invoice_file">Invoice file</a>
               </p>
             </div>
             <div class="col-md-3">
-              <q-item-label>Items price: {{}}</q-item-label>
-              <q-item-label>Shipping price: {{}}</q-item-label>
               <q-item-label
-                >Total price:
+                >Total price net:
                 {{ format_currency(invoice.price.net, invoice.price.currency) }}
+              </q-item-label>
+              <q-item-label
+                >Total price gross:
+                {{
+                  format_currency(invoice.price.gross, invoice.price.currency)
+                }}
+              </q-item-label>
+              <q-item-label
+                >Total local price gross:
+                {{
+                  format_currency(
+                    invoice.local_price.net,
+                    invoice.local_price.currency
+                  )
+                }}
               </q-item-label>
               <q-item-label
                 >Paid:
                 <strong>{{ invoice.paid ? "Yes" : "No" }}</strong></q-item-label
-              ><q-item-label
-                >Income:
-                <strong>{{
-                  invoice.isIncome ? "Yes" : "No"
-                }}</strong></q-item-label
               >
             </div>
 
@@ -72,11 +86,6 @@
             @click="invoice_edit_dialog = true"
           />
           <q-btn
-            color="primary"
-            label="Add Payment Confirmation"
-            @click="payment_confirmation_dialog = true"
-          />
-          <q-btn
             color="negative"
             label="Delete"
             @click="invoice_delete_dialog = true"
@@ -98,6 +107,7 @@
       :rows="rows"
       :loading="loading"
       :filter="filter"
+      :visible-columns="visibleColumns"
       wrap-cells
     >
       <template v-slot:top>
@@ -111,17 +121,34 @@
           />
         </div>
         <q-space />
-        <q-input
-          borderless
-          dense
-          debounce="300"
-          v-model="filter"
-          placeholder="Search"
-        >
-          <template v-slot:append>
-            <q-icon name="search" />
-          </template>
-        </q-input>
+        <div class="row q-gutter-sm">
+          <q-select
+            v-model="visibleColumns"
+            multiple
+            outlined
+            dense
+            options-dense
+            :display-value="$q.lang.table.columns"
+            emit-value
+            map-options
+            :options="columns"
+            option-value="name"
+            options-cover
+            style="min-width: 150px"
+          />
+
+          <q-input
+            borderless
+            dense
+            debounce="300"
+            v-model="filter"
+            placeholder="Search"
+          >
+            <template v-slot:append>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+        </div>
       </template>
       <template v-slot:body-cell-distributor_order_number="props">
         <q-td :props="props">
@@ -225,12 +252,6 @@
       title="Edit Invoice Item"
     ></InvoiceItemEditCreateDialog>
 
-    <PaymentConfirmationEditCreateDialog
-      v-model="payment_confirmation_dialog"
-      :invoice_id="invoice.id"
-      @onCreated="on_paymentConfirmation_created"
-    ></PaymentConfirmationEditCreateDialog>
-
     <delete-confirmation-dialog
       v-model="delete_confirmation_dialog"
       title="Delete Invoice Item"
@@ -265,7 +286,6 @@ import {
 import PaymentConfirmationTable from "src/components/widgets/PaymentConfirmationTable.vue";
 import InvoiceEditCreateDialog from "src/components/dialogs/InvoiceEditCreateDialog.vue";
 import InvoiceItemEditCreateDialog from "src/components/dialogs/InvoiceItemEditCreateDialog.vue";
-import PaymentConfirmationEditCreateDialog from "src/components/dialogs/PaymentConfirmationEditCreateDialog.vue";
 import DeleteConfirmationDialog from "src/components/DeleteConfirmationDialog.vue";
 
 const columns = [
@@ -274,6 +294,7 @@ const columns = [
     label: "Position",
     align: "left",
     field: "position_in_invoice",
+    required: true,
   },
   {
     name: "order_number",
@@ -281,7 +302,7 @@ const columns = [
     align: "left",
     field: "order_number",
   },
-  { name: "action", label: "Action", align: "left" },
+  { name: "action", label: "Action", align: "left", required: true },
   {
     name: "bookkeeping",
     label: "Bookkeeping",
@@ -294,6 +315,7 @@ const columns = [
     label: "Description",
     align: "left",
     field: "description",
+    required: true,
   },
   {
     name: "distributor_order_number",
@@ -457,15 +479,13 @@ export default {
     const invoice_edit_dialog = ref(false);
     const invoice_delete_dialog = ref(false);
 
-    // payment confirmation manipulation dialogs
-    const payment_confirmation_dialog = ref(false);
-
     // invoice item manipulation dialogs
     const delete_confirmation_dialog = ref(false);
     const invoice_item_edit_dialog = ref(false);
     const invoice_item_create_dialog = ref(false);
 
     const rows = ref([]);
+    const visibleColumns = ref();
     const filter = ref("");
     const loading = ref(false);
     const invoice = ref({
@@ -475,18 +495,10 @@ export default {
       date: null,
       due_date: null,
       price: { net: null, currency_display: null },
+      local_price: { net: null, gross: null, currency_display: null },
       paid: null,
       note: null,
       invoice_file: null,
-      payment_confirmation_file: null,
-    });
-
-    const paymentConfirmation = ref({
-      confirmation_file: null,
-      payment_date: null,
-      amount: { value: null, currency: null },
-      method: null,
-      note: null,
     });
 
     const active_invoice_item = ref();
@@ -499,11 +511,6 @@ export default {
     function on_invoice_delete() {
       invoice_delete_dialog.value = false;
       api_invoice_delete(id, router);
-    }
-
-    function on_paymentConfirmation_created() {
-      payment_confirmation_dialog.value = false;
-      load_paymentConfirmations();
     }
 
     function edit_invoice_item(row) {
@@ -549,33 +556,6 @@ export default {
         });
     }
 
-    function load_paymentConfirmations() {
-      api
-        .get(`/api/invoice/paymentConfirmation/?invoice=${id}&pageSize=10000`)
-        .then((response) => {
-          if (response.data.count > 0) {
-            let data = response.data.results[0];
-            paymentConfirmation.value.confirmation_file =
-              data.confirmation_file;
-            paymentConfirmation.value.payment_date = data.payment_date;
-            paymentConfirmation.value.amount = {
-              value: data.value_net,
-              currency: data.value_currency,
-            };
-            paymentConfirmation.value.payment_method = data.payment_method;
-            paymentConfirmation.value.note = data.note;
-          } else {
-            paymentConfirmation.value = {
-              confirmation_file: null,
-              payment_date: null,
-              amount: { value: null, currency: null },
-              method: null,
-              note: null,
-            };
-          }
-        });
-    }
-
     function load_invoice_data() {
       loading.value = true;
       api
@@ -590,12 +570,10 @@ export default {
           invoice.value.invoice_file = response.data.invoice_file;
           invoice.value.currency = response.data.currency;
           invoice.value.price = response.data.price;
+          invoice.value.local_price = response.data.local_price;
           invoice.value.paid = response.data.paid;
           invoice.value.paidDate = response.data.paid_date;
           invoice.value.note = response.data.note;
-
-          invoice.value.payment_confirmation_file =
-            response.data.payment_confirmation_file;
         })
         .finally(() => {
           loading.value = false;
@@ -605,23 +583,19 @@ export default {
     onMounted(() => {
       load_invoice_data();
       load_invoice_items();
-      load_paymentConfirmations();
     });
 
     return {
       columns,
       rows,
+      visibleColumns,
       loading,
       filter,
       invoice,
-      paymentConfirmation,
 
       invoice_edit_dialog,
       invoice_delete_dialog,
       on_invoice_delete,
-
-      payment_confirmation_dialog,
-      on_paymentConfirmation_created,
 
       invoice_item_edit_dialog,
       invoice_item_create_dialog,
@@ -648,7 +622,6 @@ export default {
     PaymentConfirmationTable,
     InvoiceEditCreateDialog,
     InvoiceItemEditCreateDialog,
-    PaymentConfirmationEditCreateDialog,
     DeleteConfirmationDialog,
   },
 };
