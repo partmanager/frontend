@@ -20,7 +20,9 @@
             label="Importer"
           />
         </q-card-section>
-        <q-card-section>
+        <q-card-section
+          v-if="invoice_importer_importer == 'Generic CSV file importer'"
+        >
           <q-select
             name="distributor"
             filled
@@ -32,37 +34,22 @@
           />
         </q-card-section>
 
-        <q-card-section>
-          <q-input
-            name="invoice_date"
-            filled
+        <q-card-section
+          v-if="invoice_importer_importer == 'Generic CSV file importer'"
+        >
+          <DateInputWidget
+            ref="dateRef"
             v-model="date"
-            mask="date"
-            :rules="['date']"
-          >
-            <template v-slot:append>
-              <q-icon name="event" class="cursor-pointer">
-                <q-popup-proxy
-                  cover
-                  transition-show="scale"
-                  transition-hide="scale"
-                >
-                  <q-date v-model="date">
-                    <div class="row items-center justify-end">
-                      <q-btn v-close-popup label="Close" color="primary" flat />
-                    </div>
-                  </q-date>
-                </q-popup-proxy>
-              </q-icon>
-            </template>
-          </q-input>
+            filled
+          ></DateInputWidget>
         </q-card-section>
 
         <q-card-section>
           <q-file
+            ref="fileRef"
+            v-model="file"
             name="file"
             filled
-            v-model="invoice_importer_file"
             label="Invoice file"
           />
         </q-card-section>
@@ -81,16 +68,28 @@ import { ref, defineComponent } from "vue";
 import { api } from "boot/axios";
 import { backendURL } from "src/boot/backend";
 import { get_distributor_set } from "src/boot/distributor_set";
+import DateInputWidget from "src/components/widgets/DateInputWidget.vue";
 
 export default {
   name: "InvoiceImportDialog",
-  components: {},
+  components: { DateInputWidget },
   props: {},
   emits: ["onCreated", "onUpdated"],
   setup(props, ctx) {
+    const fileRef = ref(null);
+    const dateRef = ref(null);
+
+    const file = ref();
+    const date = ref(null);
     const invoice_distributor_options = ref(get_distributor_set());
 
     return {
+      fileRef,
+      dateRef,
+
+      file,
+      date,
+
       backendURL,
       invoice_importer_importer: ref(),
       invoice_importer_options: [

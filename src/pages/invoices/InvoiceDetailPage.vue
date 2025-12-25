@@ -3,8 +3,8 @@
     <div class="row">
       <q-card class="col" align="justify">
         <q-card-section>
-          <div class="row">
-            <div class="col-md-3">
+          <div class="row q-gutter-md">
+            <div class="col">
               <q-item-label
                 >Distributor:
                 <strong>{{ invoice.distributor.name }}</strong></q-item-label
@@ -29,7 +29,7 @@
                 <a :href="invoice.invoice_file">Invoice file</a>
               </p>
             </div>
-            <div class="col-md-3">
+            <div class="col">
               <q-item-label
                 >Total price net:
                 {{ format_currency(invoice.price.net, invoice.price.currency) }}
@@ -41,11 +41,36 @@
                 }}
               </q-item-label>
               <q-item-label
-                >Total local price gross:
+                >Total local price net:
                 {{
                   format_currency(
                     invoice.local_price.net,
                     invoice.local_price.currency
+                  )
+                }}
+              </q-item-label>
+              <q-item-label
+                >Total local price gross:
+                {{
+                  format_currency(
+                    invoice.local_price.gross,
+                    invoice.local_price.currency
+                  )
+                }}
+              </q-item-label>
+              <q-item-label
+                v-if="
+                  invoice.price &&
+                  invoice.local_price &&
+                  invoice.price.currency != invoice.local_price.currency
+                "
+                >Exchange rate:
+                {{ format_currency(1, invoice.price.currency) }} =
+                {{
+                  format_currency(
+                    invoice.price_exchange_rate,
+                    invoice.local_price.currency,
+                    4
                   )
                 }}
               </q-item-label>
@@ -55,27 +80,26 @@
               >
             </div>
 
-            <div class="col-md-6">
-              <q-item-label>Status:</q-item-label>
+            <div class="col">
+              <q-item-label>Tags:</q-item-label>
               <q-input
-                v-model="invoice.status"
+                v-model="invoice.tags"
                 type="textarea"
                 filled
                 autogrow
                 readonly
               />
             </div>
-
-            <div class="col-md-12">
-              <q-item-label>Note:</q-item-label>
-              <q-input
-                v-model="invoice.note"
-                type="textarea"
-                filled
-                autogrow
-                readonly
-              />
-            </div>
+          </div>
+          <div>
+            <q-item-label>Note:</q-item-label>
+            <q-input
+              v-model="invoice.note"
+              type="textarea"
+              filled
+              autogrow
+              readonly
+            />
           </div>
         </q-card-section>
 
@@ -92,12 +116,47 @@
           />
         </q-card-actions>
       </q-card>
-      <PaymentConfirmationTable
-        v-if="invoice.id"
-        class="col"
-        :invoice_id="invoice.id"
-        dense
-      ></PaymentConfirmationTable>
+
+      <div class="col">
+        <q-card>
+          <q-tabs v-model="tabs" dense>
+            <q-tab name="confirmations" label="Payment Confirmaton" />
+            <q-tab name="attachments" label="Attachments" />
+            <q-tab name="issues" label="Issues" />
+          </q-tabs>
+
+          <q-separator />
+
+          <q-tab-panels v-model="tabs" animated>
+            <q-tab-panel name="confirmations">
+              <PaymentConfirmationTable
+                v-if="invoice.id"
+                :invoice_id="invoice.id"
+                dense
+              ></PaymentConfirmationTable>
+            </q-tab-panel>
+            <q-tab-panel name="attachments">
+              <FilesTable
+                v-if="invoice.id"
+                :invoice_id="invoice.id"
+                dense
+              ></FilesTable>
+            </q-tab-panel>
+            <q-tab-panel name="issues">
+              <div>
+                <q-item-label>Status:</q-item-label>
+                <q-input
+                  v-model="invoice.status_message"
+                  type="textarea"
+                  filled
+                  autogrow
+                  readonly
+                />
+              </div>
+            </q-tab-panel>
+          </q-tab-panels>
+        </q-card>
+      </div>
     </div>
 
     <q-table
@@ -287,6 +346,7 @@ import PaymentConfirmationTable from "src/components/widgets/PaymentConfirmation
 import InvoiceEditCreateDialog from "src/components/dialogs/InvoiceEditCreateDialog.vue";
 import InvoiceItemEditCreateDialog from "src/components/dialogs/InvoiceItemEditCreateDialog.vue";
 import DeleteConfirmationDialog from "src/components/DeleteConfirmationDialog.vue";
+import FilesTable from "src/components/widgets/FilesTable.vue";
 
 const columns = [
   {
@@ -475,6 +535,8 @@ export default {
     const router = useRouter();
     const id = route.params.id;
 
+    const tabs = ref("confirmations");
+
     // invoice manipulation dialogs
     const invoice_edit_dialog = ref(false);
     const invoice_delete_dialog = ref(false);
@@ -496,9 +558,12 @@ export default {
       due_date: null,
       price: { net: null, currency_display: null },
       local_price: { net: null, gross: null, currency_display: null },
+      price_exchange_rate: null,
       paid: null,
+      tags: null,
       note: null,
       invoice_file: null,
+      status_message: null,
     });
 
     const active_invoice_item = ref();
@@ -571,9 +636,16 @@ export default {
           invoice.value.currency = response.data.currency;
           invoice.value.price = response.data.price;
           invoice.value.local_price = response.data.local_price;
+          invoice.value.price_exchange_rate = response.data.price_exchange_rate;
           invoice.value.paid = response.data.paid;
           invoice.value.paidDate = response.data.paid_date;
+          invoice.value.tags = response.data.tags
+            .map((v) => {
+              return v.name;
+            })
+            .join(", ");
           invoice.value.note = response.data.note;
+          invoice.value.status_message = response.data.status_message;
         })
         .finally(() => {
           loading.value = false;
@@ -586,6 +658,8 @@ export default {
     });
 
     return {
+      tabs,
+
       columns,
       rows,
       visibleColumns,
@@ -623,6 +697,7 @@ export default {
     InvoiceEditCreateDialog,
     InvoiceItemEditCreateDialog,
     DeleteConfirmationDialog,
+    FilesTable,
   },
 };
 </script>

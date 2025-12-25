@@ -101,7 +101,12 @@
           <q-checkbox v-model="paid" label="Paid" />
           <q-checkbox v-model="isIncome" label="Income" />
         </div>
-
+        <TagsWidget
+          v-model="invoice.tags"
+          label="Tags"
+          filled
+          dense
+        ></TagsWidget>
         <br />
 
         <DistributorSelect
@@ -153,6 +158,7 @@ import { get_currency_by_id } from "src/boot/choices.js";
 import DateInputWidtet from "src/components/widgets/DateInputWidget.vue";
 import DistributorSelect from "src/components/widgets/DistributorSelect.vue";
 import CurrencySelectWidget from "src/components/CurrencySelectWidget.vue";
+import TagsWidget from "src/components/widgets/TagsWidget.vue";
 
 export default defineComponent({
   name: "InvoiceEditCreateDialog",
@@ -184,6 +190,7 @@ export default defineComponent({
       number: null,
       date: null,
       due_date: null,
+      tags: [],
       note: null,
     });
     const exchange_rate = ref(null);
@@ -220,8 +227,11 @@ export default defineComponent({
       formData.append("price_gross", amount.value.gross);
       formData.append("price_currency", amount.value.currency.value);
       formData.append("price_exchange_rate", exchange_rate.value);
+      for (var i = 0; i < invoice.value.tags.length; i++) {
+        formData.append("tags", invoice.value.tags[i].id);
+      }
 
-      if (invoice.value.note) formData.append("note", invoice.value.note);
+      formData.append("note", invoice.value.note);
       if (file.value != previousInvoiceFile.value)
         formData.append("invoice_file", file.value);
 
@@ -254,6 +264,7 @@ export default defineComponent({
           .get(`/api/invoice/invoice/${props.id_to_edit}/`)
           .then((response) => {
             invoice.value.number = response.data.number;
+            invoice.value.tags = response.data.tags;
             invoice.value.date = response.data.invoice_date;
             invoice.value.due_date = response.data.due_date;
 
@@ -313,6 +324,11 @@ export default defineComponent({
       validate_and_submit,
     };
   },
-  components: { DistributorSelect, CurrencySelectWidget, DateInputWidtet },
+  components: {
+    DistributorSelect,
+    CurrencySelectWidget,
+    DateInputWidtet,
+    TagsWidget,
+  },
 });
 </script>

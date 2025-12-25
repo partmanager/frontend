@@ -58,13 +58,6 @@
         <q-td :props="props">
           <div>
             <a :href="'#/invoices/' + props.row.id">{{ props.value }}</a>
-            <q-badge
-              v-if="props.row.bookkeeping == 'k'"
-              color="purple"
-              title="This invoice is tracked by bookkeping system."
-            >
-              <q-icon size="sm" name="design_services" color="white" />
-            </q-badge>
           </div>
         </q-td>
       </template>
@@ -118,13 +111,45 @@
       </template>
       <template v-slot:body-cell-status="props">
         <q-td :props="props">
-          <div>
+          <div class="q-gutter-xs">
             <q-btn
+              v-if="props.row.bookkeeping == 'k'"
+              class="col"
               padding="xs"
-              :color="props.row.status ? 'primary' : 'yellow'"
-              :icon="props.row.status ? 'check' : 'close'"
-              title="Paid"
+              color="purple"
+              icon="design_services"
+            ></q-btn>
+
+            <q-btn
+              class="col"
+              padding="xs"
+              :color="
+                props.row.status && props.row.status.length == 0
+                  ? 'primary'
+                  : 'yellow'
+              "
+              :icon="
+                props.row.status && props.row.status.length == 0
+                  ? 'check'
+                  : 'close'
+              "
+              :title="props.row.status_message"
             />
+          </div>
+        </q-td>
+      </template>
+      <template v-slot:body-cell-tags="props">
+        <q-td :props="props">
+          <div>
+            <q-chip
+              v-for="tag in props.row.tags"
+              :key="tag.id"
+              color="secondary"
+              text-color="white"
+              rounded
+              dense
+              >{{ tag.name }}</q-chip
+            >
           </div>
         </q-td>
       </template>
@@ -199,6 +224,7 @@ const columns = [
   { name: "paid", align: "center", label: "Paid", field: "paid" },
   { name: "items_count", label: "Item Count", field: "item_count" },
   { name: "status", label: "Status", field: "status" },
+  { name: "tags", label: "Tags", field: "tags" },
   {
     name: "price",
     label: "Price (net)",
