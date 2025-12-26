@@ -1,12 +1,5 @@
 <template>
   <div class="q-pa-md">
-    <q-btn
-      color="secondary"
-      :disable="loading"
-      label="Create Manufacturer"
-      @click="create_manufacturer_dialog = true"
-    />
-
     <q-tabs
       v-model="tab"
       dense
@@ -70,13 +63,6 @@
     </DeleteConfirmationDialog>
 
     <ManufacturerEditCreateDialog
-      v-model="create_manufacturer_dialog"
-      :title="'Create Manufacturer'"
-      :onsave="create_manufacturer"
-    >
-    </ManufacturerEditCreateDialog>
-
-    <ManufacturerEditCreateDialog
       v-model="edit_manufacturer"
       :title="'Edit Manufacturer'"
       :manufacturer_initial_data="manufacturer"
@@ -108,7 +94,8 @@ function load_manufacturer_detail(id) {
     .get(`/api/manufacturer/${id}`)
     .then((response) => {
       manufacturer.value = response.data;
-      parts_series.value = response.data.seriesData;
+      if (response.data.parts_series)
+        parts_series.value = response.data.seriesData;
     })
     .finally(() => {
       loading.value = false;
@@ -120,15 +107,6 @@ export default {
     const route = useRoute();
     const delete_configration = ref();
     const edit_manufacturer = ref();
-    const create_manufacturer_dialog = ref();
-
-    function create_manufacturer(manufacturer_data) {
-      api.post("/api/manufacturer/", manufacturer_data).then((response) => {
-        if (response.data.id) {
-          create_manufacturer_dialog.value = false;
-        }
-      });
-    }
 
     function update_manufacturer(manufacturer_data) {
       api
@@ -163,10 +141,9 @@ export default {
       loading,
       delete_configration,
       edit_manufacturer,
-      create_manufacturer_dialog,
 
       delete_manufacturer,
-      create_manufacturer,
+
       update_manufacturer,
     };
   },
