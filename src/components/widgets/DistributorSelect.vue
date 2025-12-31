@@ -1,13 +1,13 @@
 <template>
   <q-select
-    label="Distributor"
+    ref="selectRef"
     v-model="distributor"
+    label="Distributor"
     option-label="name"
     :options="distributor_options"
     @filter="filter_distributors_select"
     use-input
     fill-input
-    hide-selected
     filled
   />
 </template>
@@ -19,6 +19,7 @@ import { api } from "boot/axios";
 export default defineComponent({
   name: "DistributorSelect",
   setup() {
+    const selectRef = ref(null);
     const distributor = ref();
     const all_distributor_set = ref([]);
     const distributor_options = ref();
@@ -55,6 +56,7 @@ export default defineComponent({
     }
 
     return {
+      selectRef,
       distributor,
       distributor_options,
 
@@ -68,6 +70,11 @@ export default defineComponent({
         );
       },
     };
+  },
+  methods: {
+    validate() {
+      return this.$refs.selectRef.validate();
+    },
   },
 });
 </script>

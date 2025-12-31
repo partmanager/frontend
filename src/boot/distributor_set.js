@@ -1,5 +1,6 @@
 import { api } from "./axios";
 import { ref } from "vue";
+import { Notify } from "quasar";
 
 const distributor_set = ref();
 
@@ -41,8 +42,23 @@ function load_distributor_detail(id) {
   return response;
 }
 
-function delete_distributor(id) {
-  let response = api.delete(`/api/distributor/${id}/`);
+function api_delete_distributor(id) {
+  let response = api
+    .delete(`/api/distributor/${id}/`)
+    .then((response) => {
+      Notify.create({
+        color: "positive",
+        message: "Distributor removed successfully",
+      });
+    })
+    .catch(() => {
+      Notify.create({
+        color: "negative",
+        position: "top",
+        message: "Unable to delete distributor",
+        icon: "report_problem",
+      });
+    });
   return response;
 }
 
@@ -71,7 +87,7 @@ export {
   get_distributor_by_id,
   distributor_id_to_name,
   load_distributor_detail,
-  delete_distributor,
+  api_delete_distributor,
   manufacturer_name_conversion_detail,
   edit_manufacturer_name_conversion,
   delete_manufacturer_name_conversion,

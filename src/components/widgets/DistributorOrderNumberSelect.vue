@@ -1,5 +1,6 @@
 <template>
   <q-select
+    ref="donSelectRef"
     v-model="don"
     @before-show="load_initial_data"
     @filter="filter_don_select"
@@ -31,6 +32,7 @@ export default defineComponent({
     },
   },
   setup(props) {
+    const donSelectRef = ref(null);
     const don = ref();
     const loading = ref();
     const filtered_don_set = ref(["loading..."]);
@@ -92,6 +94,11 @@ export default defineComponent({
       filter_don_select,
       don_onScroll,
     };
+  },
+  methods: {
+    validate() {
+      return this.$refs.donSelectRef.validate();
+    },
   },
 });
 </script>

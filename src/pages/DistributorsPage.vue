@@ -84,7 +84,7 @@
 import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { api } from "boot/axios";
-import { delete_distributor } from "src/boot/distributor_set";
+import { api_delete_distributor } from "src/boot/distributor_set";
 import DistributorEditCreateDialog from "../components/DistributorEditCreateDialog.vue";
 import DistributorManufacturersNameConversionTable from "src/components/DistributorManufacturersNameConversionTable.vue";
 import DistributorOrderNumberTable from "../components/DistributorOrderNumberTable.vue";
@@ -133,7 +133,7 @@ export default {
     }
 
     function onDistributorDelete() {
-      delete_distributor(route.params.id);
+      api_delete_distributor(route.params.id);
       delete_confirmation_dialog.value = false;
     }
 

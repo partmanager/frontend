@@ -8,12 +8,15 @@ const routes = [
     path: "/invoices",
     component: () => import("layouts/DefaultLayout.vue"),
     children: [
-      { path: "", component: () => import("pages/InvoicesPage.vue") },
+      { path: "", component: () => import("pages/invoices/InvoicesPage.vue") },
       {
         path: ":id(\\d+)",
-        component: () => import("pages/InvoiceDetailPage.vue"),
+        component: () => import("pages/invoices/InvoiceDetailPage.vue"),
       },
-      { path: "items", component: () => import("pages/InvoiceItemsPage.vue") },
+      {
+        path: "items",
+        component: () => import("pages/invoices/InvoiceItemsPage.vue"),
+      },
     ],
   },
   {
@@ -44,7 +47,13 @@ const routes = [
       api_url: "/api/manufacturer",
       router_url: "/manufacturers/",
     },
-    component: () => import("layouts/MainListLayout.vue"),
+    component: () => import("layouts/DefaultLayout.vue"),
+    children: [
+      {
+        path: "",
+        component: () => import("pages/manufacturers/ManufacturersPage.vue"),
+      },
+    ],
   },
   {
     path: "/manufacturers/:id",
@@ -52,7 +61,7 @@ const routes = [
       api_url: "/api/manufacturer",
       router_url: "/manufacturers/",
     },
-    component: () => import("layouts/MainListLayout.vue"),
+    component: () => import("layouts/DefaultLayout.vue"),
     children: [
       { path: "", component: () => import("pages/ManufacturersPage.vue") },
     ],
@@ -82,7 +91,13 @@ const routes = [
       api_url: "/api/distributor",
       router_url: "/distributors/",
     },
-    component: () => import("layouts/DistributorsLayout.vue"),
+    component: () => import("layouts/DefaultLayout.vue"),
+    children: [
+      {
+        path: "",
+        component: () => import("pages/distributors/DistributorsPage.vue"),
+      },
+    ],
   },
   {
     path: "/distributors/:id",
@@ -90,7 +105,7 @@ const routes = [
       api_url: "/api/distributor",
       router_url: "/distributors/",
     },
-    component: () => import("layouts/DistributorsLayout.vue"),
+    component: () => import("layouts/DefaultLayout.vue"),
     children: [
       { path: "", component: () => import("pages/DistributorsPage.vue") },
     ],

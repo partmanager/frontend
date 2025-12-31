@@ -11,128 +11,190 @@
       </q-card-section>
 
       <q-card-section>
-        <q-input
-          v-model="invoice_item.position"
-          filled
-          label="Position"
-          hint="Item position in invoice"
-          type="number"
-          dense
-        />
+        <div class="row q-gutter-md">
+          <q-input
+            ref="invoicePositionRef"
+            v-model="invoice_item.position"
+            class="col-3"
+            label="Position"
+            hint="Item position in invoice"
+            type="number"
+            filled
+            dense
+            :rules="[(val) => !!val || 'Field is required']"
+          />
+
+          <q-input
+            v-model="invoice_item.order_number"
+            class="col"
+            filled
+            label="Order Number"
+            hint="Item order number"
+            dense
+          />
+        </div>
 
         <q-input
-          v-model="invoice_item.order_number"
+          v-model="invoice_item.description"
+          label="Description"
+          type="text_area"
+          autogrow
           filled
-          label="Order Number"
-          hint="Item order number"
           dense
         />
 
         <DistributorOrderNumberSelect
+          ref="distributorOrderNumberRef"
           v-model="invoice_item.don"
           :distributor_id="props.invoice.distributor.id"
+          filled
+          dense
+          :rules="[(val) => !!val || 'Field is required']"
         ></DistributorOrderNumberSelect>
 
-        <div class="row">
+        <div class="row q-gutter-md">
           <q-input
+            ref="quantityOrderedRef"
             v-model="invoice_item.qty_ordered"
-            filled
+            class="col"
             label="Quantity Ordered"
-            hint="Quantity Ordered"
             type="number"
+            filled
             dense
+            :rules="[(val) => !!val || 'Field is required']"
           />
 
           <q-input
+            ref="quantityShippedRef"
             v-model="invoice_item.qty_shipped"
-            filled
+            class="col"
             label="Quantity Shipped"
-            hint="Quantity Shipped"
             type="number"
+            filled
             dense
+            :rules="[(val) => !!val || 'Field is required']"
           />
 
           <q-input
             v-model="invoice_item.qty_delivered"
-            filled
+            class="col"
             label="Quantity Delivered"
-            hint="Quantity Delivered"
             type="number"
+            filled
             dense
           />
 
-          <quantity-unit-widget v-model="invoice_item.qty_unit">
+          <quantity-unit-widget
+            ref="quantityUnitRef"
+            v-model="invoice_item.qty_unit"
+            class="col"
+            filled
+            dense
+            :rules="[(val) => !!val || 'Field is required']"
+          >
           </quantity-unit-widget>
         </div>
-        <div class="row">
+
+        <div class="row q-gutter-md">
           <q-input
+            ref="itemPriceRef"
             v-model="invoice_item.price_value"
-            filled
+            class="col"
             label="Net Price"
-            hint="Item net price"
             type="number"
+            filled
             dense
+            :rules="[(val) => !!val || 'Field is required']"
           />
 
           <q-input
+            ref="itemTaxRef"
             v-model="invoice_item.price_vat_tax"
-            filled
-            label="VAT tax rate"
-            hint="VAT tax rate in %"
+            class="col"
+            label="VAT tax rate in %"
             type="number"
+            filled
             dense
+            :rules="[(val) => val >= 0 || 'Field is required']"
           />
 
           <currency-select-widget
+            ref="itemCurrencyRef"
             v-model="invoice_item.price_currency"
+            class="col"
+            :rules="[(val) => !!val || 'Field is required']"
           ></currency-select-widget>
         </div>
 
-        <div class="row">
+        <div class="row q-gutter-md">
           <q-select
+            ref="itemTypeRef"
             v-model="item_type_model"
-            filled
+            class="col"
             label="Item type"
-            hint="Item type"
             option-label="name"
             :options="merchandise_type"
             :selected="invoice_item.item_type"
+            filled
             dense
+            :rules="[(val) => !!val || 'Field is required']"
           />
 
           <bookkeeping-type-widget
+            ref="bookkeepingRef"
             v-model="invoice_item.bookkeeping_type"
+            class="col"
+            filled
+            dense
+            :rules="[(val) => !!val || 'Field is required']"
           ></bookkeeping-type-widget>
         </div>
 
-        <q-input
-          v-model="invoice_item.lot_number"
-          filled
-          label="LOT number"
-          hint="LOT number"
-          dense
-        />
-        <q-input
-          v-model="invoice_item.ECCN"
-          filled
-          label="ECCN"
-          hint="ECCN"
-          dense
-        />
-        <q-input
-          v-model="invoice_item.TARIC"
-          filled
-          label="TARIC"
-          hint="TARIC"
-          dense
-        />
-        <q-input
-          v-model="invoice_item.COO"
-          filled
-          label="COO"
-          hint="Country of origin"
-          dense
-        />
+        <div class="row q-gutter-md">
+          <q-input
+            v-model="invoice_item.serial_number"
+            class="col"
+            filled
+            label="Serial number"
+            hint="Item Serial number"
+            dense
+          />
+          <q-input
+            v-model="invoice_item.lot_number"
+            class="col"
+            filled
+            label="LOT number"
+            hint="Item LOT number"
+            dense
+          />
+        </div>
+
+        <div class="row q-gutter-md">
+          <q-input
+            v-model="invoice_item.ECCN"
+            class="col"
+            filled
+            label="ECCN"
+            hint="ECCN"
+            dense
+          />
+          <q-input
+            v-model="invoice_item.TARIC"
+            class="col"
+            filled
+            label="TARIC"
+            hint="TARIC"
+            dense
+          />
+          <q-input
+            v-model="invoice_item.COO"
+            class="col"
+            filled
+            label="COO"
+            hint="Country of origin"
+            dense
+          />
+        </div>
       </q-card-section>
 
       <q-separator />
@@ -158,10 +220,10 @@ import {
   get_quantity_unit_by_id,
   get_currency_by_id,
 } from "src/boot/choices.js";
-import QuantityUnitWidget from "./QuantityUnitWidget.vue";
-import CurrencySelectWidget from "./CurrencySelectWidget.vue";
-import DistributorOrderNumberSelect from "./widgets/DistributorOrderNumberSelect.vue";
-import BookkeepingTypeWidget from "./widgets/BookkeepingTypeWidget.vue";
+import QuantityUnitWidget from "src/components/QuantityUnitWidget.vue";
+import CurrencySelectWidget from "src/components/CurrencySelectWidget.vue";
+import DistributorOrderNumberSelect from "src/components/widgets/DistributorOrderNumberSelect.vue";
+import BookkeepingTypeWidget from "src/components/widgets//BookkeepingTypeWidget.vue";
 
 const merchandise_type = [
   { name: "Part", id: 1 },
@@ -204,12 +266,24 @@ export default defineComponent({
     },
   },
   setup(props) {
+    const invoicePositionRef = ref(null);
+    const distributorOrderNumberRef = ref(null);
+    const quantityOrderedRef = ref(null);
+    const quantityShippedRef = ref(null);
+    const quantityUnitRef = ref(null);
+    const itemPriceRef = ref(null);
+    const itemTaxRef = ref(null);
+    const itemCurrencyRef = ref(null);
+    const itemTypeRef = ref(null);
+    const bookkeepingRef = ref(null);
+
     const item_type_model = ref();
     const invoice_item = ref({
       id: null,
       order_number: null,
       item_type: null,
       position: null,
+      description: null,
       invoice_id: null,
       don: null,
       qty_ordered: null,
@@ -220,30 +294,35 @@ export default defineComponent({
       price_vat_tax: 23,
       price_currency: null,
       bookkeeping_type: null,
+      serial_number: null,
       lot_number: null,
       ECCN: null,
       TARIC: null,
       COO: null,
     });
+
     const backendError = ref();
     const invoice_item_don_model = ref();
 
     function invoice_item_edit_load_data() {
       if (props.invoice_item_id) {
         api
-          .get(`/api/invoiceItem/${props.invoice_item_id.id}/`)
+          .get(`/api/invoice/item/${props.invoice_item_id.id}/`)
           .then((response) => {
             invoice_item.value.position = response.data.position_in_invoice;
             invoice_item.value.order_number = response.data.order_number;
+            invoice_item.value.description = response.data.description;
             invoice_item.value.item_type = response.data.type;
             // invoice_item.value.don = response.data.distributor_order_number;
             invoice_item.value.qty_ordered = response.data.ordered_quantity;
             invoice_item.value.qty_shipped = response.data.shipped_quantity;
-            invoice_item.value.qty_delivered = response.data.shipped_delivered;
+            invoice_item.value.qty_delivered = response.data.delivered_quantity;
             invoice_item.value.qty_unit = get_quantity_unit_by_id(
               response.data.quantity_unit
             );
             invoice_item.value.price_value = response.data.extended_price.net;
+            invoice_item.value.price_vat_tax =
+              response.data.extended_price.vat_tax;
             invoice_item.value.price_currency = get_currency_by_id(
               response.data.extended_price.currency
             );
@@ -253,6 +332,7 @@ export default defineComponent({
             invoice_item.value.bookkeeping_type = bookkeping_type.filter(
               (value) => value.value == response.data.bookkeeping
             )[0];
+            invoice_item.value.serial_number = response.data.serial_number;
             invoice_item.value.lot_number = response.data.LOT;
             invoice_item.value.ECCN = response.data.ECCN;
             invoice_item.value.TARIC = response.data.TARIC;
@@ -267,7 +347,34 @@ export default defineComponent({
                 // filtered_don_set.value = response.data.results;
               });
           });
+      } else {
+        reset_data();
       }
+    }
+
+    function reset_data() {
+      invoice_item.value.position = null;
+      invoice_item.value.order_number = null;
+      invoice_item.value.description = null;
+      invoice_item.value.item_type = null;
+      invoice_item.value.qty_ordered = null;
+      invoice_item.value.qty_shipped = null;
+      invoice_item.value.qty_delivered = null;
+      invoice_item.value.qty_unit = null;
+      invoice_item.value.price_value = null;
+      invoice_item.value.price_vat_tax = 23;
+      invoice_item.value.price_currency = get_currency_by_id(
+        props.invoice.price.currency
+      );
+      item_type_model.value = null;
+      invoice_item.value.bookkeeping_type = null;
+      invoice_item.value.serial_number = null;
+      invoice_item.value.lot_number = null;
+      invoice_item.value.ECCN = null;
+      invoice_item.value.TARIC = null;
+      invoice_item.value.COO = null;
+
+      invoice_item.value.don = null;
     }
 
     function validate_and_submit() {
@@ -279,7 +386,19 @@ export default defineComponent({
     }
 
     function validate_fields() {
-      return true;
+      let valid = true;
+      valid &= invoicePositionRef.value.validate();
+      valid &= distributorOrderNumberRef.value.validate();
+      valid &= quantityOrderedRef.value.validate();
+      valid &= quantityShippedRef.value.validate();
+      valid &= quantityUnitRef.value.validate();
+      valid &= itemPriceRef.value.validate();
+      valid &= itemTaxRef.value.validate();
+      valid &= itemCurrencyRef.value.validate();
+      valid &= itemTypeRef.value.validate();
+      valid &= bookkeepingRef.value.validate();
+
+      return valid;
     }
 
     function fields_to_api_data() {
@@ -287,6 +406,7 @@ export default defineComponent({
         order_number: invoice_item.value.order_number,
         type: item_type_model.value.id,
         position_in_invoice: invoice_item.value.position,
+        description: invoice_item.value.description,
         // distributor_number: invoice_item.value.don,
         ordered_quantity: invoice_item.value.qty_ordered,
         shipped_quantity: invoice_item.value.qty_shipped,
@@ -295,6 +415,7 @@ export default defineComponent({
         price_net: invoice_item.value.price_value,
         price_vat_tax: invoice_item.value.price_vat_tax,
         price_currency: invoice_item.value.price_currency.value,
+        serial_number: invoice_item.value.serial_number,
         LOT: invoice_item.value.lot_number,
         ECCN: invoice_item.value.ECCN,
         COO: invoice_item.value.COO,
@@ -310,7 +431,7 @@ export default defineComponent({
       if (validate_fields()) {
         const data = fields_to_api_data();
         api
-          .post("/api/invoiceItem/", data)
+          .post("/api/invoice/item/", data)
           .then((response) => {})
           .catch((error) => {
             console.log("Problem submitting New Invoice Item", error);
@@ -330,7 +451,7 @@ export default defineComponent({
       if (validate_fields()) {
         const data = fields_to_api_data();
         api
-          .put(`/api/invoiceItem/${invoce_item_id}/`, data)
+          .put(`/api/invoice/item/${invoce_item_id}/`, data)
           .then((response) => {})
           .catch((error) => {
             console.log("Problem Updating Invoice Item", error);
@@ -347,6 +468,17 @@ export default defineComponent({
     }
 
     return {
+      invoicePositionRef,
+      distributorOrderNumberRef,
+      quantityOrderedRef,
+      quantityShippedRef,
+      quantityUnitRef,
+      itemPriceRef,
+      itemTaxRef,
+      itemCurrencyRef,
+      itemTypeRef,
+      bookkeepingRef,
+
       props,
       item_type_model,
       invoice_item,

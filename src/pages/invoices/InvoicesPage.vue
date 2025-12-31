@@ -7,6 +7,8 @@
       >Show all invoice items</q-btn
     ><br />
     <br />
+    <InvoicesFiltersCard @on_change="on_filters_update"></InvoicesFiltersCard>
+    <br />
     <q-table
       title="Invoices"
       row-key="id"
@@ -56,19 +58,12 @@
         <q-td :props="props">
           <div>
             <a :href="'#/invoices/' + props.row.id">{{ props.value }}</a>
-            <q-badge
-              v-if="props.row.bookkeeping == 'k'"
-              color="purple"
-              title="This invoice is tracked by bookkeping system."
-            >
-              <q-icon size="sm" name="design_services" color="white" />
-            </q-badge>
           </div>
         </q-td>
       </template>
       <template v-slot:body-cell-action="props">
         <q-td :props="props">
-          <div>
+          <div class="q-gutter-sm">
             <q-btn
               padding="xs"
               color="primary"
@@ -94,100 +89,76 @@
           </div>
         </q-td>
       </template>
-      <template v-slot:body-cell-status="props">
+      <template v-slot:body-cell-paid="props">
         <q-td :props="props">
           <div>
-            <q-icon
-              v-if="props.row.all_items_mapped"
-              name="star"
-              title="All invoice items are mapped to part or service."
+            <q-btn
+              v-if="props.row.paid"
+              padding="xs"
+              color="primary"
+              icon="check"
+              title="Paid"
             />
+            <q-btn
+              v-if="!props.row.paid"
+              padding="xs"
+              :color="is_overdue(props.row.due_date) ? 'red' : 'yellow'"
+              icon="close"
+              title="Not paid"
+            />
+          </div>
+        </q-td>
+      </template>
+      <template v-slot:body-cell-status="props">
+        <q-td :props="props">
+          <div class="q-gutter-xs">
+            <q-btn
+              v-if="props.row.bookkeeping == 'k'"
+              class="col"
+              padding="xs"
+              color="purple"
+              icon="design_services"
+            ></q-btn>
+
+            <q-btn
+              class="col"
+              padding="xs"
+              :color="
+                props.row.status && props.row.status.length == 0
+                  ? 'primary'
+                  : 'yellow'
+              "
+              :icon="
+                props.row.status && props.row.status.length == 0
+                  ? 'check'
+                  : 'close'
+              "
+              :title="props.row.status_message"
+            />
+          </div>
+        </q-td>
+      </template>
+      <template v-slot:body-cell-tags="props">
+        <q-td :props="props">
+          <div>
+            <q-chip
+              v-for="tag in props.row.tags"
+              :key="tag.id"
+              color="secondary"
+              text-color="white"
+              rounded
+              dense
+              >{{ tag.name }}</q-chip
+            >
           </div>
         </q-td>
       </template>
     </q-table>
 
     <div class="q-gutter-md">
-      <q-dialog v-model="invoice_import_dialog">
-        <q-card style="width: 700px; max-width: 80vw">
-          <q-card-section>
-            <div class="text-h6">Invoice Import</div>
-          </q-card-section>
-
-          <q-form
-            :action="backendURL + '/api/invoiceImport'"
-            method="post"
-            enctype="multipart/form-data"
-            class="q-gutter-md"
-          >
-            <q-card-section>
-              <q-select
-                name="importer"
-                filled
-                v-model="invoice_importer_importer"
-                :options="invoice_importer_options"
-                label="Importer"
-              />
-            </q-card-section>
-            <q-card-section>
-              <q-select
-                name="distributor"
-                filled
-                v-model="invoice_distributor"
-                :options="invoice_distributor_options"
-                option-label="name"
-                option-value="name"
-                label="Distributor"
-              />
-            </q-card-section>
-
-            <q-card-section>
-              <q-input
-                name="invoice_date"
-                filled
-                v-model="date"
-                mask="date"
-                :rules="['date']"
-              >
-                <template v-slot:append>
-                  <q-icon name="event" class="cursor-pointer">
-                    <q-popup-proxy
-                      cover
-                      transition-show="scale"
-                      transition-hide="scale"
-                    >
-                      <q-date v-model="date">
-                        <div class="row items-center justify-end">
-                          <q-btn
-                            v-close-popup
-                            label="Close"
-                            color="primary"
-                            flat
-                          />
-                        </div>
-                      </q-date>
-                    </q-popup-proxy>
-                  </q-icon>
-                </template>
-              </q-input>
-            </q-card-section>
-
-            <q-card-section>
-              <q-file
-                name="file"
-                filled
-                v-model="invoice_importer_file"
-                label="Invoice file"
-              />
-            </q-card-section>
-
-            <q-card-actions align="right" class="bg-white text-teal">
-              <q-btn flat label="Cancel" v-close-popup />
-              <q-btn flat label="Import" type="submit" />
-            </q-card-actions>
-          </q-form>
-        </q-card>
-      </q-dialog>
+      <InvoiceImportDialog
+        v-model="invoice_import_dialog"
+      ></InvoiceImportDialog>
 
       <InvoiceEditCreateDialog
         v-model="invoice_edit_dialog"
@@ -226,12 +197,13 @@
 import { ref, onMounted } from "vue";
 import { api } from "boot/axios";
 import { backendURL } from "src/boot/backend";
-import {
-  get_distributor_set,
-  distributor_id_to_name,
-} from "src/boot/distributor_set";
-import InvoiceEditCreateDialog from "src/components/InvoiceEditCreateDialog.vue";
+import { distributor_id_to_name } from "src/boot/distributor_set";
+import { api_invoice_delete } from "boot/invoices_api.js";
+import { format_currency } from "boot/formaters.js";
+import InvoiceEditCreateDialog from "src/components/dialogs/InvoiceEditCreateDialog.vue";
 import DeleteConfirmationDialog from "src/components/DeleteConfirmationDialog.vue";
+import InvoiceImportDialog from "src/components/dialogs/InvoiceImportDialog.vue";
+import InvoicesFiltersCard from "src/components/widgets/InvoicesFiltersCard.vue";
 
 const columns = [
   {
@@ -248,14 +220,17 @@ const columns = [
   },
   { name: "action", label: "Action", align: "left" },
   { name: "date", align: "center", label: "Date", field: "invoice_date" },
+  { name: "due_date", align: "center", label: "Due date", field: "due_date" },
+  { name: "paid", align: "center", label: "Paid", field: "paid" },
   { name: "items_count", label: "Item Count", field: "item_count" },
   { name: "status", label: "Status", field: "status" },
+  { name: "tags", label: "Tags", field: "tags" },
   {
     name: "price",
     label: "Price (net)",
     format: (val) => {
       if (val) {
-        return `${val.net} ${val.currency_display}`;
+        return format_currency(val.net, val.currency);
       } else {
         return "Error";
       }
@@ -267,7 +242,7 @@ const columns = [
     label: "Price (gross)",
     format: (val) => {
       if (val) {
-        return `${val.gross} ${val.currency_display}`;
+        return format_currency(val.gross, val.currency);
       } else {
         return "Error";
       }
@@ -279,7 +254,7 @@ const columns = [
     label: "Local Price",
     format: (val) => {
       if (val) {
-        return `${val.net} ${val.currency_display}`;
+        return format_currency(val.net, val.currency);
       } else {
         return "Error";
       }
@@ -301,22 +276,64 @@ export default {
     const date = ref();
     const invoice_edit_dialog = ref(false);
     const invoice_create_dialog = ref(false);
-    const invoice_distributor_options = ref(get_distributor_set());
 
     const active_invoice = ref({ id: null });
     const delete_confirmation_dialog = ref(false);
 
+    const distributor_filter = ref([]);
+
+    function date_to_drf_filter(date) {
+      if (date) {
+        const [month, day, year] = [
+          date.getMonth(),
+          date.getDate(),
+          date.getFullYear(),
+        ];
+        return `${month + 1}/${day}/${year}`;
+      } else {
+        return null;
+      }
+    }
+
     function onRequest(props) {
       const { page, rowsPerPage } = props.pagination;
-      const filter = props.filter;
+      const search = props.filter;
+      const filter = props.filter2 || { distrubutor: null, privateUse: null };
+      console.log(filter);
+      let params = {
+        search: search,
+        pageSize: rowsPerPage,
+        pageNumber: page,
+        paid: filter.paid,
+      };
+
+      if (filter.distributor) {
+        params.distributor__in = filter.distributor.join(",");
+      }
+
+      if (filter.invoiceDate_from) {
+        params.invoice_date__gte = date_to_drf_filter(filter.invoiceDate_from);
+      }
+      if (filter.invoiceDate_to) {
+        params.invoice_date__lte = date_to_drf_filter(filter.invoiceDate_to);
+      }
+      if (filter.dueDate) {
+        params.due_date__gte = date_to_drf_filter(filter.dueDate.from);
+        params.due_date__lte = date_to_drf_filter(filter.dueDate.to);
+      }
+      if (filter.privateUse !== null) {
+        if (filter.privateUse) {
+          params.bookkeeping = "p";
+        }
+        if (!filter.privateUse) {
+          params.bookkeeping = "k";
+        }
+      }
+
       loading.value = true;
       api
-        .get("/api/invoice", {
-          params: {
-            search: filter,
-            pageSize: rowsPerPage,
-            pageNumber: page,
-          },
+        .get("/api/invoice/invoice", {
+          params,
         })
         .then((response) => {
           pagination.value.page = page;
@@ -347,9 +364,7 @@ export default {
     }
 
     function api_call_delete_invoice() {
-      api
-        .delete(`/api/invoice/${active_invoice.value.id}/`)
-        .then((response) => {});
+      api_invoice_delete(active_invoice.value.id);
       delete_confirmation_dialog.value = false;
       reload_invoices_table();
     }
@@ -364,15 +379,19 @@ export default {
       reload_invoices_table();
     }
 
-    function submitForm() {
-      const importer = invoice_importer_importer.value;
-      let formData = new FormData();
-      formData.append("importer", "asdf");
-      // formData.append('file', invoice_importer_file.value)
-      const request = new XMLHttpRequest();
-      request.open("POST", "http://127.0.0.1:8000/invoices/import");
-      request.send(formData);
+    function is_overdue(due_date) {
+      const now = Date.now();
+      return due_date < now;
     }
+
+    function on_filters_update(filters) {
+      onRequest({
+        pagination: pagination.value,
+        filter: filter.value,
+        filter2: filters,
+      });
+    }
+
     onMounted(() => {
       // get initial data from server (1st page)
       onRequest({
@@ -389,19 +408,14 @@ export default {
       rows,
       date,
       invoice_import_dialog: ref(false),
-      invoice_importer_options: [
-        "Archive importer",
-        "TME CSV file importer",
-        "Generic CSV file importer",
-      ],
-      invoice_distributor: ref(),
-      invoice_distributor_options,
-      invoice_importer_importer: ref(),
+
       invoice_importer_file: ref(),
 
       invoice_edit_dialog,
       invoice_create_dialog,
       delete_confirmation_dialog,
+
+      distributor_filter,
 
       onRequest,
 
@@ -413,15 +427,17 @@ export default {
       on_invoice_edit,
       on_invoice_create,
 
+      is_overdue,
+
       distributor_id_to_name,
+      on_filters_update,
     };
   },
-  methods: {
-    onSubmit2(evt) {
-      console.log("@submit - submiting to invoice import", evt);
-      evt.target.submit();
-    },
+  components: {
+    InvoiceEditCreateDialog,
+    DeleteConfirmationDialog,
+    InvoiceImportDialog,
+    InvoicesFiltersCard,
   },
-  components: { InvoiceEditCreateDialog, DeleteConfirmationDialog },
 };
 </script>

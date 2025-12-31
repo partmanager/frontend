@@ -304,7 +304,7 @@ export default {
       }
 
       api
-        .get("/api/invoiceItemWithStorage/", {
+        .get("/api/invoice/itemWithStorage/", {
           params: t,
         })
         .then((response) => {

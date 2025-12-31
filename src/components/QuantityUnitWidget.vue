@@ -1,7 +1,7 @@
 <template>
   <q-select
+    ref="unitRef"
     label="Quantity Unit"
-    hint="Quantity Unit"
     v-model="quantity_unit"
     option-label="label"
     :options="quantity_unit_options"
@@ -26,6 +26,7 @@ const all_quantity_units_set = [
 
 export default defineComponent({
   setup() {
+    const unitRef = ref(null);
     const quantity_unit = ref();
     const quantity_unit_options = ref(all_quantity_units_set);
 
@@ -49,6 +50,7 @@ export default defineComponent({
     }
 
     return {
+      unitRef,
       quantity_unit,
       quantity_unit_options,
 
@@ -62,6 +64,11 @@ export default defineComponent({
         );
       },
     };
+  },
+  methods: {
+    validate() {
+      return this.$refs.unitRef.validate();
+    },
   },
 });
 </script>
