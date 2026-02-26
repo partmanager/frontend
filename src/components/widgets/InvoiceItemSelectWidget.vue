@@ -72,7 +72,7 @@ export default defineComponent({
     function load_initial_data(search) {
       if (props.initial_invoice_item_id && !search) {
         api
-          .get(`/api/invoiceItem/${props.initial_invoice_item_id}`)
+          .get(`/api/invoice/item/${props.initial_invoice_item_id}`)
           .then((response) => {
             invoice_items_set.value = [response.data];
             generate_label();
@@ -85,7 +85,7 @@ export default defineComponent({
           params.invoice__distributor = props.distributor.id;
           params.search = search;
         }
-        api.get(`/api/invoiceItem/`, { params: params }).then((response) => {
+        api.get(`/api/invoice/item/`, { params: params }).then((response) => {
           invoice_items_set.value = response.data.results;
           generate_label();
         });

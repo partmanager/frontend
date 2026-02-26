@@ -24,6 +24,7 @@ const all_bookkeping_type_set = [
 ];
 
 export default defineComponent({
+  name: "BookkepingTypeWidget",
   setup() {
     const bookkepingRef = ref(null);
     const bookkeping_type = ref();

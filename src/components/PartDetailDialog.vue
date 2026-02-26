@@ -29,13 +29,13 @@
                   <div v-if="part_details.product_url">
                     <strong>Manufacturer Part Number:</strong>
                     <a :href="part_details.product_url">{{
-                      part_details.manufacturer_part_number
+                      part_details.MPN
                     }}</a
                     ><br />
                   </div>
                   <div v-if="!part_details.product_url">
                     <strong>Manufacturer Part Number:</strong>
-                    {{ part_details.manufacturer_part_number }}<br />
+                    {{ part_details.MPN }}<br />
                   </div>
                   <strong>Description:</strong>
                   {{ part_details.description }}<br />
@@ -118,7 +118,7 @@
           <SymbolFootprintCard
             :symbol="part_details.symbol"
             :manufacturer_name="part_details.manufacturer.name"
-            :manufacturer_part_number="part_details.manufacturer_part_number"
+            :manufacturer_part_number="part_details.MPN"
           ></SymbolFootprintCard>
         </q-tab-panel>
 
@@ -182,7 +182,7 @@ export default defineComponent({
         loading.value = true;
         api
           //.post(`/parts/api/part/detail`, { id: props.id })
-          .get(`/api/part-poli/${props.id}`)
+          .get(`/api/part/poly/${props.id}`)
           .then((response) => {
             part_details.value = response.data;
           })

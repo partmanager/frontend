@@ -159,120 +159,27 @@
       </div>
     </div>
 
-    <q-table
-      title="Invoice Items"
-      row-key="id"
-      :columns="columns"
-      :rows="rows"
-      :loading="loading"
-      :filter="filter"
-      :visible-columns="visibleColumns"
+    <InvoiceItemsTable
+      ref="tableRef"
+      :filters="tablefilter"
+      v-model:visibleColumns="
+        users_store.$state.settings.invoices.invoiceDetailPage.visibleColumns
+      "
+      @onEditClick="edit_invoice_item"
+      @onDeleteClick="delete_invoice_item"
       wrap-cells
     >
-      <template v-slot:top>
-        <div class="q-gutter-sm row">
-          <div class="q-table__title">Invoice Items</div>
+      <template v-slot:header>
+        <div class="q-pl-md">
           <q-btn
+            padding="sm"
             color="primary"
-            label="Add Item"
-            title="Create invoice item"
-            @click="create_invoice_item()"
+            label="Create Item"
+            @click="invoice_item_create_dialog = true"
           />
         </div>
-        <q-space />
-        <div class="row q-gutter-sm">
-          <q-select
-            v-model="visibleColumns"
-            multiple
-            outlined
-            dense
-            options-dense
-            :display-value="$q.lang.table.columns"
-            emit-value
-            map-options
-            :options="columns"
-            option-value="name"
-            options-cover
-            style="min-width: 150px"
-          />
-
-          <q-input
-            borderless
-            dense
-            debounce="300"
-            v-model="filter"
-            placeholder="Search"
-          >
-            <template v-slot:append>
-              <q-icon name="search" />
-            </template>
-          </q-input>
-        </div>
       </template>
-      <template v-slot:body-cell-distributor_order_number="props">
-        <q-td :props="props">
-          <div>
-            {{ props.value }}
-            <q-icon v-if="props.row.type == 3" name="local_shipping"></q-icon>
-            <q-icon v-if="props.row.type == 2" name="design_services"></q-icon>
-          </div>
-        </q-td>
-      </template>
-      <template v-slot:body-cell-action="props">
-        <q-td :props="props">
-          <div class="q-gutter-sm">
-            <q-btn
-              padding="xs"
-              color="primary"
-              icon="edit"
-              title="Edit"
-              @click="edit_invoice_item(props.row)"
-            />
-            <q-btn
-              padding="xs"
-              color="red"
-              icon="delete"
-              title="Delete invoice item"
-              @click="delete_invoice_item(props.row)"
-            />
-          </div>
-        </q-td>
-      </template>
-      <template v-slot:body-cell-manufacturer_order_number="props">
-        <q-td :props="props">
-          <div>
-            {{ props.value }}
-            <div v-if="!props.value">
-              {{ props.row.don_mon }}
-              <q-badge
-                color="yellow-6"
-                text-color="black"
-                title="Manufacturer Order Number not assigned, displaying manufacturer order number form distributor data."
-              >
-                <q-icon class="q-ml-xs" name="warning"></q-icon>
-              </q-badge>
-            </div>
-          </div>
-        </q-td>
-      </template>
-      <template v-slot:body-cell-manufacturer="props">
-        <q-td :props="props">
-          <div>
-            {{ props.value }}
-            <div v-if="!props.value">
-              {{ props.row.don_manufacturer }}
-              <q-badge
-                color="yellow-6"
-                text-color="black"
-                title="Manufacturer not assigned, displaying manufacturer form distributor data."
-              >
-                <q-icon class="q-ml-xs" name="warning"></q-icon>
-              </q-badge>
-            </div>
-          </div>
-        </q-td>
-      </template>
-    </q-table>
+    </InvoiceItemsTable>
 
     <InvoiceEditCreateDialog
       v-model="invoice_edit_dialog"
@@ -332,12 +239,8 @@
 import { ref, onMounted } from "vue";
 import { api } from "boot/axios";
 import { useRoute, useRouter } from "vue-router";
-import { quantity_unit_id_to_name } from "src/boot/choices.js";
-import {
-  format_currency,
-  format_bookkeeping,
-  format_paymentMethod,
-} from "boot/formaters.js";
+import { useUsersStore } from "stores/users";
+import { format_currency, format_paymentMethod } from "boot/formaters.js";
 import {
   api_invoice_delete,
   api_invoice_item_delete,
@@ -345,195 +248,18 @@ import {
 import PaymentConfirmationTable from "src/components/widgets/PaymentConfirmationTable.vue";
 import InvoiceEditCreateDialog from "src/components/dialogs/InvoiceEditCreateDialog.vue";
 import InvoiceItemEditCreateDialog from "src/components/dialogs/InvoiceItemEditCreateDialog.vue";
+import InvoiceItemsTable from "components/widgets/InvoiceItemsTable.vue";
 import DeleteConfirmationDialog from "src/components/DeleteConfirmationDialog.vue";
 import FilesTable from "src/components/widgets/FilesTable.vue";
-
-const columns = [
-  {
-    name: "position",
-    label: "Position",
-    align: "left",
-    field: "position_in_invoice",
-    required: true,
-  },
-  {
-    name: "order_number",
-    label: "Order Number",
-    align: "left",
-    field: "order_number",
-  },
-  { name: "action", label: "Action", align: "left", required: true },
-  {
-    name: "bookkeeping",
-    label: "Bookkeeping",
-    align: "left",
-    field: "bookkeeping",
-    format: format_bookkeeping,
-  },
-  {
-    name: "description",
-    label: "Description",
-    align: "left",
-    field: "description",
-    required: true,
-  },
-  {
-    name: "distributor_order_number",
-    label: "Distributor Order Number",
-    align: "left",
-    field: "distributor_order_number",
-    format: (val) => val.don,
-  },
-  {
-    name: "manufacturer_order_number",
-    label: "Manufacturer Order Number",
-    align: "left",
-    field: "distributor_order_number",
-    format: (val) => {
-      if (val)
-        if (val.manufacturer_order_number) {
-          return val.manufacturer_order_number.mon;
-        } else {
-          return val.mon;
-        }
-    },
-  },
-  {
-    name: "manufacturer",
-    align: "center",
-    label: "Manufacturer",
-    field: "distributor_order_number",
-    format: (val) => {
-      if (val) {
-        if (val.manufacturer_order_number) {
-          return val.manufacturer_order_number.manufacturer;
-        } else {
-          return val.manufacturer_name;
-        }
-      }
-    },
-  },
-  {
-    name: "quantity_ordered",
-    label: "Quantity Ordered",
-    field: "quantity",
-    format: (val) => val.ordered,
-  },
-  {
-    name: "quantity_shipped",
-    label: "Quantity Shipped",
-    field: "quantity",
-    format: (val) => val.shipped,
-  },
-  {
-    name: "quantity_delivered",
-    label: "Quantity Delivered",
-    field: "quantity",
-    format: (val) => val.delivered,
-  },
-  {
-    name: "quantity_unit",
-    label: "Quantity Unit",
-    field: "quantity",
-    format: (val) => val.unit_display,
-  },
-  {
-    name: "extended_price",
-    label: "Extended Price (net)",
-    field: "extended_price",
-    format: (v) => {
-      if (v) {
-        return format_currency(v.net, v.currency);
-      }
-      return null;
-    },
-  },
-  {
-    name: "tax_rate",
-    label: "TAX Rate",
-    field: "extended_price",
-    format: (v) => v.vat_tax + "%",
-  },
-  {
-    name: "serial_number",
-    label: "Serial Number",
-    field: "serial_number",
-  },
-  {
-    name: "lot_number",
-    label: "LOT Number",
-    field: "LOT",
-  },
-  {
-    name: "COO",
-    label: "COO",
-    field: "COO",
-  },
-  {
-    name: "ECCN",
-    label: "ECCN",
-    field: "ECCN",
-  },
-  {
-    name: "TARIC",
-    label: "TARIC",
-    field: "TARIC",
-  },
-  {
-    name: "local_price",
-    label: "Local Extended Price (net)",
-    field: "local_price",
-    format: (v) => {
-      if (v) {
-        return format_currency(v.net, v.currency);
-      }
-      return null;
-    },
-  },
-  {
-    name: "unit_price",
-    label: "Unit Price (net)",
-    field: "unit_price",
-    format: (v) => {
-      if (v) {
-        return format_currency(v.net, v.currency, 4);
-      }
-      return null;
-    },
-  },
-  {
-    name: "stock_quantity",
-    label: "Stock Quantity",
-    field: "stock_data",
-    format: (val) => val.quantity,
-  },
-  {
-    name: "stock_value",
-    label: "Stock Value",
-    field: "stock_data",
-    format: (val) => {
-      if (val.value_currency) {
-        return val.value + " " + val.value_currency;
-      }
-    },
-  },
-  {
-    name: "stock_location",
-    label: "Stock Location(s)",
-    field: "stock_data",
-    format: (val) => {
-      if (val.storage_location) {
-        return val.storage_location.join(",");
-      }
-    },
-  },
-];
 
 export default {
   setup() {
     const route = useRoute();
     const router = useRouter();
     const id = route.params.id;
+    const users_store = useUsersStore();
+
+    const tableRef = ref();
 
     const tabs = ref("confirmations");
 
@@ -546,9 +272,7 @@ export default {
     const invoice_item_edit_dialog = ref(false);
     const invoice_item_create_dialog = ref(false);
 
-    const rows = ref([]);
     const visibleColumns = ref();
-    const filter = ref("");
     const loading = ref(false);
     const invoice = ref({
       id: null,
@@ -565,6 +289,8 @@ export default {
       invoice_file: null,
       status_message: null,
     });
+
+    const tablefilter = ref({ invoice: id });
 
     const active_invoice_item = ref();
 
@@ -614,11 +340,7 @@ export default {
     }
 
     function load_invoice_items() {
-      api
-        .get(`/api/invoice/itemWithStorage/?invoice=${id}&pageSize=10000`)
-        .then((response) => {
-          rows.value = response.data.results;
-        });
+      tableRef.value.reload();
     }
 
     function load_invoice_data() {
@@ -659,12 +381,12 @@ export default {
 
     return {
       tabs,
+      users_store,
+      tableRef,
+      tablefilter,
 
-      columns,
-      rows,
       visibleColumns,
       loading,
-      filter,
       invoice,
 
       invoice_edit_dialog,
@@ -698,6 +420,7 @@ export default {
     InvoiceItemEditCreateDialog,
     DeleteConfirmationDialog,
     FilesTable,
+    InvoiceItemsTable,
   },
 };
 </script>

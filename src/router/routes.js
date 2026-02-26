@@ -177,6 +177,14 @@ const routes = [
     ],
   },
   {
+    path: "/part-create/",
+    props: { api_url: "/parts/api/get_part_menu", router_url: "/parts/" },
+    component: () => import("layouts/MainLayout.vue"),
+    children: [
+      { path: "", component: () => import("pages/parts/PartCreatePage.vue") },
+    ],
+  },
+  {
     path: "/partscadlib",
     props: {
       api_url: "/partscadlib/api/get_part_menu",

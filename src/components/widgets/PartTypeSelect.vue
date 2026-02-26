@@ -1,16 +1,15 @@
 <template>
   <q-select
     @before-show="load_initial_data"
-    v-model="manufacturer_model"
-    option-label="name"
-    :options="filtered_manufacturer_set"
+    v-model="partType"
+    option-label="display_name"
+    :options="filtered_set"
     @filter="filter_manufacturers_select"
     use-input
     fill-input
     hide-selected
     clearable
-    filled
-    label="Manufacturer"
+    label="Part Type"
   />
 </template>
 
@@ -19,11 +18,11 @@ import { ref, onMounted, defineComponent } from "vue";
 import { api } from "boot/axios";
 
 export default defineComponent({
-  name: "ManufacturerSelect",
+  name: "PartTypeSelect",
   setup() {
-    const manufacturer_model = ref();
-    const manufacturer_set = ref([]);
-    const filtered_manufacturer_set = ref();
+    const partType = ref();
+    const all_options_set = ref([]);
+    const filtered_set = ref();
 
     function filterFn(
       val,
@@ -38,26 +37,20 @@ export default defineComponent({
         } else {
           const needle = val.toLowerCase();
           filtered_options.value = all_available_options.filter(
-            (v) => v.name.toLowerCase().indexOf(needle) > -1
+            (v) => v.display_name.toLowerCase().indexOf(needle) > -1
           );
         }
       });
     }
 
     function filter_manufacturers_select(val, update, abort) {
-      return filterFn(
-        val,
-        update,
-        abort,
-        filtered_manufacturer_set,
-        manufacturer_set.value
-      );
+      return filterFn(val, update, abort, filtered_set, all_options_set.value);
     }
 
     function load_initial_data() {
-      if (manufacturer_set.value.length == 0) {
-        api.get("api/manufacturer/?pageSize=1000").then((response) => {
-          manufacturer_set.value = response.data.results;
+      if (all_options_set.value.length == 0) {
+        api.options("/api/part/resistors/?pageSize=1000").then((response) => {
+          all_options_set.value = response.data.actions.POST.part_type.choices;
         });
       }
     }
@@ -67,20 +60,12 @@ export default defineComponent({
     });
 
     return {
-      manufacturer_model,
-      filtered_manufacturer_set,
+      partType,
+      filtered_set,
 
       load_initial_data,
       filter_manufacturers_select,
     };
-  },
-  created() {
-    this.$watch(
-      () => this.$props.initial_manufacturer_id,
-      (toParams, previousParams) => {
-        this.load_initial_data();
-      }
-    );
   },
 });
 </script>

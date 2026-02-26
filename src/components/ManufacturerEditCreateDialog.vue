@@ -34,7 +34,7 @@
           label="Save"
           color="primary"
           type="submit"
-          @click="onsave(manufacturer)"
+          @click="create_manufacturer"
         />
       </q-card-actions>
     </q-card>
@@ -43,6 +43,7 @@
 
 <script>
 import { ref, defineComponent } from "vue";
+import { api_manufacturer_create } from "boot/manufacturer_api";
 
 export default defineComponent({
   name: "ManufacturerEditCreateDialog",
@@ -66,6 +67,19 @@ export default defineComponent({
       website_url: "",
     });
 
+    function create_manufacturer() {
+      let formData = new FormData();
+
+      formData.append("name", manufacturer.value.name);
+      formData.append("full_name", manufacturer.value.full_name);
+
+      api_manufacturer_create(formData).finally(() => {
+        if (props.onsave) {
+          props.onsave(invoice);
+        }
+      });
+    }
+
     function manufacturer_edit_load_data() {
       if (props.manufacturer_initial_data) {
         // eslint-disable-next-line
@@ -77,6 +91,7 @@ export default defineComponent({
 
     return {
       manufacturer,
+      create_manufacturer,
       manufacturer_edit_load_data,
     };
   },

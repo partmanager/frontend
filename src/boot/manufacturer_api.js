@@ -3,6 +3,27 @@ import { ref } from "vue";
 
 const manufacturer_set = ref();
 
+function api_manufacturer_create(formData) {
+  return api
+    .post("/api/manufacturer/", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    .then((response) => {
+      Notify.create({
+        color: "positive",
+        message: "Manufacturer created successfully",
+      });
+    })
+    .catch(() => {
+      Notify.create({
+        color: "negative",
+        position: "top",
+        message: "Unable to create Manufacturer",
+        icon: "report_problem",
+      });
+    });
+}
+
 function load_manufacturers() {
   api.get("api/manufacturer").then((response) => {
     manufacturer_set.value = response.data;
@@ -25,4 +46,8 @@ function get_manufacturer_by_id(id) {
   return null;
 }
 
-export { get_manufacturer_set, get_manufacturer_by_id };
+export {
+  api_manufacturer_create,
+  get_manufacturer_set,
+  get_manufacturer_by_id,
+};

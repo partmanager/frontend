@@ -26,8 +26,8 @@ export default defineComponent({
 
     function load_distributors() {
       if (all_distributor_set.value.length == 0) {
-        api.get("/api/distributor/").then((response) => {
-          all_distributor_set.value = response.data;
+        api.get("/api/distributor/?pageSize=1000").then((response) => {
+          all_distributor_set.value = response.data.results;
         });
       }
     }

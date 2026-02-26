@@ -259,7 +259,7 @@ export default defineComponent({
     }
 
     function load_generic_part() {
-      api.get(`/api/part-generic/`).then((response) => {
+      api.get(`/api/part/poly/?generic=True`).then((response) => {
         generic_rows.value = response.data.results;
         console.log(generic_rows.value);
       });

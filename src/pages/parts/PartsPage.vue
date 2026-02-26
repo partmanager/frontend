@@ -1,6 +1,10 @@
 <template>
   <div class="q-pa-md">
-    <PartsFiltersCard align="justify"></PartsFiltersCard>
+    <PartsFiltersCard
+      v-model="filters"
+      @filterUpdate="filterUpdate"
+      align="justify"
+    ></PartsFiltersCard>
     <br />
 
     <q-table
@@ -84,7 +88,7 @@
                   name: 'manufacturer_order_number',
                   label: 'Manufacturer Order Number (MON)',
                   align: 'left',
-                  field: 'manufacturer_order_number',
+                  field: 'MON',
                 },
                 {
                   name: 'production_status',
@@ -131,7 +135,7 @@ const columns_begin = [
     name: "manufacturer_part_number",
     label: "MPN",
     align: "left",
-    field: "manufacturer_part_number",
+    field: "MPN",
   },
   { name: "part", label: "OPNs", align: "left", field: "part" },
   { name: "action", label: "Action", align: "left", field: "part" },
@@ -150,7 +154,17 @@ const columns_begin = [
 ];
 
 const columns_end = [
-  { name: "package", label: "Package", align: "left", field: "package" },
+  {
+    name: "package",
+    label: "Package",
+    align: "left",
+    field: "package",
+    format: (v) => {
+      if (v) {
+        return v.name;
+      }
+    },
+  },
   { name: "part", label: "Marking Code", align: "left", field: "part" },
   {
     name: "working_temperature_range",
@@ -351,9 +365,16 @@ export default {
     const rows = ref([]);
     const loading = ref(false);
     const filter = ref();
+    const filters = ref();
     const part_detail_dialog = ref(false);
     const part_detail_dialog_id = ref();
     const columns = ref();
+
+    function filterUpdate(val) {
+      console.log(val);
+      filters.value = val;
+      onRequest({ pagination: pagination.value, filter: filter.value });
+    }
 
     function onRequest(props) {
       const { page, rowsPerPage, rowsNumber } = props.pagination;
@@ -361,14 +382,22 @@ export default {
       loading.value = true;
       const id = route.params.id;
       const part_types = id_to_api_url[id] || { part_types: "" };
+
+      let params = {
+        part_type__in: part_types.part_types,
+        search: filter,
+        pageSize: rowsPerPage,
+        pageNumber: page,
+      };
+      if (filters.value) {
+        if ("manufacturer" in filters.value) {
+          params.manufacturer = filters.value.manufacturer;
+        }
+      }
+
       api
-        .get(`/api/part-poli/`, {
-          params: {
-            part_type__in: part_types.part_types,
-            search: filter,
-            pageSize: rowsPerPage,
-            pageNumber: page,
-          },
+        .get(`/api/part/poly/`, {
+          params: params,
         })
         .then((response) => {
           pagination.value.page = page;
@@ -403,12 +432,15 @@ export default {
       columns,
       rows,
       filter,
+      filters,
 
       part_detail_dialog,
       part_detail_dialog_id,
 
       onRequest,
       load_parts,
+
+      filterUpdate,
     };
   },
   created() {

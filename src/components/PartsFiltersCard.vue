@@ -47,15 +47,11 @@
               counter
               style="width: 250px"
             />
-            <q-select
-              hint="Manufacturer"
-              filled
+            <ManufacturerSelect
               v-model="manufacturer_model"
+              :hide-selected="false"
               multiple
-              :options="manufacturer_options"
-              counter
-              style="width: 250px"
-            />
+            ></ManufacturerSelect>
           </div>
 
           <br />
@@ -108,6 +104,7 @@
               </q-card-section>
             </q-card>
           </div>
+          <q-btn label="Apply" @click="apply_filter"></q-btn>
         </q-card-section>
       </div>
     </q-slide-transition>
@@ -117,13 +114,16 @@
 
 <script>
 import { ref } from "vue";
+import ManufacturerSelect from "src/components/widgets/ManufacturerSelect.vue";
 
 const options = ["In local stock", "In distributor stock", "Has distributor"];
 const production_status_options = ["Active", "Unknown"];
 
 export default {
   name: "PartsFiltersCard",
-  setup() {
+  components: { ManufacturerSelect },
+  props: { modelValue: { type: Object, default: null } },
+  setup(props, { emit }) {
     const expanded = ref();
     const model = ref();
     const production_status_model = ref();
@@ -133,6 +133,13 @@ export default {
     const dielectric_type_options = ref();
     const manufacturer_model = ref();
     const manufacturer_options = ref();
+
+    function apply_filter() {
+      let filters = {
+        manufacturer: manufacturer_model.value.map((v) => v.id),
+      };
+      emit("filterUpdate", filters);
+    }
 
     return {
       expanded,
@@ -146,6 +153,8 @@ export default {
       manufacturer_model,
       manufacturer_options,
       production_status_options,
+
+      apply_filter,
     };
   },
 };

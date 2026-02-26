@@ -5,7 +5,7 @@
         name: 'manufacturer_order_number',
         label: 'Manufacturer Order Number',
         align: 'left',
-        field: 'manufacturer_order_number',
+        field: 'MON',
       },
       {
         name: 'packaging_code',

@@ -2,7 +2,35 @@ import { defineStore, acceptHMRUpdate } from "pinia";
 import { api } from "boot/axios";
 
 export const useUsersStore = defineStore("UsersStore", {
-  state: () => ({ users: [], me: {} }),
+  state: () => ({
+    users: [],
+    me: {},
+    settings: {
+      invoices: {
+        invoiceDetailPage: {
+          visibleColumns: [
+            "position",
+            "order_number",
+            "bookkeeping",
+            "description",
+            "manufacturer",
+            "manufacturer_order_number",
+            "distributor_order_number",
+            "quantity_ordered",
+            "quantity_shipped",
+            "quantity_delivered",
+            "quantity_unit",
+            "unit_price",
+            "local_price",
+            "stock_quantity",
+            "stock_value",
+            "stock_location",
+          ],
+        },
+        invoiceItemsPage: { visibleColumns: [] },
+      },
+    },
+  }),
   getters: {
     getUserById: (state) => {
       return (userId) => state.users.find((user) => user.id === userId);
@@ -21,7 +49,7 @@ export const useUsersStore = defineStore("UsersStore", {
           });
         })
         .catch(() => {
-          this.router.push("/login");
+          //this.router.push("/login");
         });
     },
   },
